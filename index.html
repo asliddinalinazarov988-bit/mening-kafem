@@ -140,6 +140,44 @@
   .item.hot{border-color:var(--line);background:linear-gradient(135deg,rgba(212,175,55,.12),var(--black-3) 60%)}
   .item-name .tag{display:inline-block;font-size:10px;line-height:1.5;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:20px;background:var(--gold);color:var(--black);margin-left:6px;vertical-align:2px}
 
+  .item[hidden]{display:none}
+  .item-buy{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+  .add-btn{
+    padding:7px 16px;border-radius:40px;border:1px solid var(--gold);background:transparent;
+    color:var(--gold);font-family:inherit;font-weight:600;font-size:12.5px;cursor:pointer;transition:.2s;white-space:nowrap
+  }
+  .add-btn:hover{background:var(--gold);color:var(--black)}
+  .add-btn.added{background:var(--grad);color:var(--black);border-color:transparent}
+
+  /* ---------- Savat ---------- */
+  .cart{scroll-margin-top:90px;max-width:920px;margin:40px auto 0;padding:30px;border-radius:var(--radius);background:var(--black-3);border:1px solid var(--line)}
+  .cart-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+  .cart-head h4{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:32px;letter-spacing:2px}
+  .cart-count{font-size:13px;font-weight:600;color:var(--muted);padding:5px 14px;border:1px solid var(--line);border-radius:40px}
+  .cart-row{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(212,175,55,.12)}
+  .cart-row .nm{flex:1;min-width:0}
+  .cart-row .nm b{display:block;font-size:15px;font-weight:600}
+  .cart-row .nm span{font-size:12.5px;color:var(--muted)}
+  .qty{display:flex;align-items:center;gap:10px}
+  .qty button{
+    width:34px;height:34px;border-radius:50%;border:1px solid var(--gold);background:transparent;color:var(--gold);
+    font-family:inherit;font-size:18px;font-weight:700;line-height:1;cursor:pointer;transition:.2s
+  }
+  .qty button:hover{background:var(--gold);color:var(--black)}
+  .qty output{min-width:22px;text-align:center;font-weight:700}
+  .cart-row .sum{min-width:110px;text-align:right;font-weight:700;color:var(--gold-light);white-space:nowrap}
+  .cart-empty{text-align:center;color:var(--muted);font-size:14px;padding:18px 0}
+  .cart-total{display:flex;justify-content:space-between;align-items:center;padding-top:18px;font-size:18px;font-weight:700}
+  .cart-total .gold-text{font-size:22px}
+  .cart .btn{width:100%;margin-top:20px}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+  .order{display:none}
+  .order.show{display:block}
+  .order-note{margin-top:22px;text-align:center;color:var(--muted);font-size:14px}
+  .order-phone{display:block;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:3px;line-height:1.2}
+  .order-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .order-actions .btn{margin-top:20px}
+
   /* ---------- Amenities ---------- */
   .amen-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
   .amen{
@@ -227,6 +265,13 @@
     .amen-grid{grid-template-columns:1fr}
     .item{padding:15px 16px}
     .item-name b{font-size:15px}
+    .item{gap:12px}
+    .cart{padding:24px 18px}
+    .cart-row{flex-wrap:wrap;gap:10px}
+    .cart-row .nm{flex-basis:100%}
+    .cart-row .sum{min-width:0;margin-left:auto}
+    .order-actions{grid-template-columns:1fr}
+    .order-actions .btn + .btn{margin-top:0}
     .row2{grid-template-columns:1fr}
     form,.info-card{padding:24px 20px}
     .mobile-bar{display:flex}
@@ -324,73 +369,96 @@
     </div>
 
     <div class="tabs reveal" role="tablist">
-      <button class="tab active" data-tab="taomlar" role="tab" aria-selected="true">Taomlar</button>
+      <button class="tab active" data-tab="hammasi" role="tab" aria-selected="true">Hammasi</button>
+      <button class="tab" data-tab="burgerlar" role="tab" aria-selected="false">Burgerlar</button>
+      <button class="tab" data-tab="lavash" role="tab" aria-selected="false">Lavash</button>
       <button class="tab" data-tab="ichimliklar" role="tab" aria-selected="false">Ichimliklar</button>
     </div>
 
-    <div class="menu-list" id="taomlar">
-      <div class="item reveal">
+    <div class="menu-list" id="menuList">
+      <div class="item reveal" data-cat="burgerlar" data-name="Burger" data-price="39000">
         <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M4 11a8 5 0 0 1 16 0z"/><path d="M3 14h18"/><path d="M4 17h16a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z"/></svg></div>
         <div class="item-name"><b>Burger</b><span>Klassik mol go'shtli burger</span></div>
-        <div class="price">39 000 so'm</div>
+        <div class="item-buy"><div class="price">39 000 so'm</div><button type="button" class="add-btn">Savatga</button></div>
       </div>
-      <div class="item reveal">
+      <div class="item reveal" data-cat="burgerlar" data-name="Chizburger" data-price="42000">
         <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M4 11a8 5 0 0 1 16 0z"/><path d="M3 14h18l-3 2-3-2-3 2-3-2-3 2z"/><path d="M4 18h16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></div>
         <div class="item-name"><b>Chizburger</b><span>Eritilgan pishloq bilan</span></div>
-        <div class="price">42 000 so'm</div>
+        <div class="item-buy"><div class="price">42 000 so'm</div><button type="button" class="add-btn">Savatga</button></div>
       </div>
-      <div class="item hot reveal">
+      <div class="item hot reveal" data-cat="burgerlar" data-name="Bigchizburger" data-price="49000">
         <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M4 9a8 5 0 0 1 16 0z"/><path d="M3 12h18"/><path d="M3 15h18l-3 2-3-2-3 2-3-2-3 2z"/><path d="M4 19h16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></div>
         <div class="item-name"><b>Bigchizburger <span class="tag">HIT</span></b><span>Ikki qavatli, katta portsiya</span></div>
-        <div class="price">49 000 so'm</div>
+        <div class="item-buy"><div class="price">49 000 so'm</div><button type="button" class="add-btn">Savatga</button></div>
       </div>
-      <div class="item reveal">
+      <div class="item reveal" data-cat="lavash" data-name="Lavash" data-price="36000">
         <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M6 3l12 4-6 14z"/><path d="M8 8l6 2M10 13l3 1"/></svg></div>
         <div class="item-name"><b>Lavash</b><span>Yangi sabzavot va go'sht</span></div>
-        <div class="price">36 000 so'm</div>
+        <div class="item-buy"><div class="price">36 000 so'm</div><button type="button" class="add-btn">Savatga</button></div>
       </div>
-      <div class="item reveal">
+      <div class="item reveal" data-cat="lavash" data-name="Tandir lavash" data-price="43000">
         <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M6 3l12 4-6 14z"/><path d="M12 3c1 2 3 2 3 4M9 5c0 2 1 3 1 4"/></svg></div>
         <div class="item-name"><b>Tandir lavash</b><span>Tandirda pishirilgan</span></div>
-        <div class="price">43 000 so'm</div>
+        <div class="item-buy"><div class="price">43 000 so'm</div><button type="button" class="add-btn">Savatga</button></div>
       </div>
-      <div class="item reveal">
+      <div class="item reveal" data-cat="boshqa" data-name="Klab sendvich" data-price="45000">
         <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M3 18L12 6l9 12z"/><path d="M6 14h12M8.5 11h7"/></svg></div>
         <div class="item-name"><b>Klab sendvich</b><span>Uch qavatli klassik sendvich</span></div>
-        <div class="price">45 000 so'm</div>
+        <div class="item-buy"><div class="price">45 000 so'm</div><button type="button" class="add-btn">Savatga</button></div>
       </div>
-      <div class="item hot reveal">
+      <div class="item hot reveal" data-cat="boshqa" data-name="Pitsa Peperoni" data-price="105000">
         <div class="item-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="9" r="1.3"/><circle cx="15" cy="10" r="1.3"/><circle cx="10" cy="15" r="1.3"/><circle cx="15" cy="15" r="1.3"/></svg></div>
         <div class="item-name"><b>Pitsa Peperoni <span class="tag">OILAVIY</span></b><span>Butun oila uchun katta pitsa</span></div>
-        <div class="price">105 000 so'm</div>
+        <div class="item-buy"><div class="price">105 000 so'm</div><button type="button" class="add-btn">Savatga</button></div>
+      </div>
+      <div class="item hot reveal" data-cat="ichimliklar" data-name="Moxito" data-price="55000">
+        <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M6 4h12l-2 17H8z"/><path d="M14 2l-2 8"/><path d="M9 11c1 1 2 1 3 0s2-1 3 0"/></svg></div>
+        <div class="item-name"><b>Moxito</b><span>Yalpiz va laym bilan salqin</span></div>
+        <div class="item-buy"><div class="price">55 000 so'm</div><button type="button" class="add-btn">Savatga</button></div>
+      </div>
+      <div class="item reveal" data-cat="ichimliklar" data-name="Coca-Cola" data-price="20000">
+        <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M10 2h4v3l2 3v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8l2-3z"/><path d="M8 12h8v5H8z"/></svg></div>
+        <div class="item-name"><b>Coca-Cola</b><span>1,5 litr</span></div>
+        <div class="item-buy"><div class="price">20 000 so'm</div><button type="button" class="add-btn">Savatga</button></div>
+      </div>
+      <div class="item reveal" data-cat="ichimliklar" data-name="Fanta" data-price="20000">
+        <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M10 2h4v3l2 3v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8l2-3z"/><path d="M8 12h8v5H8z"/></svg></div>
+        <div class="item-name"><b>Fanta</b><span>1,5 litr</span></div>
+        <div class="item-buy"><div class="price">20 000 so'm</div><button type="button" class="add-btn">Savatga</button></div>
+      </div>
+      <div class="item reveal" data-cat="ichimliklar" data-name="Limon choy" data-price="30000">
+        <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17"/><circle cx="12" cy="13" r="2"/></svg></div>
+        <div class="item-name"><b>Limon choy</b><span>Issiq, limon bo'lagi bilan</span></div>
+        <div class="item-buy"><div class="price">30 000 so'm</div><button type="button" class="add-btn">Savatga</button></div>
+      </div>
+      <div class="item reveal" data-cat="ichimliklar" data-name="Qahva" data-price="10000">
+        <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 2c0 2 2 2 2 4M12 2c0 2 2 2 2 4"/></svg></div>
+        <div class="item-name"><b>Qahva</b><span>Xushbo'y, yangi damlangan</span></div>
+        <div class="item-buy"><div class="price">10 000 so'm</div><button type="button" class="add-btn">Savatga</button></div>
       </div>
     </div>
 
-    <div class="menu-list" id="ichimliklar" hidden>
-      <div class="item hot">
-        <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M6 4h12l-2 17H8z"/><path d="M14 2l-2 8"/><path d="M9 11c1 1 2 1 3 0s2-1 3 0"/></svg></div>
-        <div class="item-name"><b>Moxito</b><span>Yalpiz va laym bilan salqin</span></div>
-        <div class="price">55 000 so'm</div>
+    <div class="cart reveal" id="savat">
+      <div id="cartView">
+        <div class="cart-head">
+          <h4 class="gold-text">Savat</h4>
+          <span class="cart-count" id="cartCount">0 ta taom</span>
+        </div>
+        <div id="cartItems"></div>
+        <p class="cart-empty" id="cartEmpty">Savat bo'sh. Menyudan taom tanlang.</p>
+        <div class="cart-total"><span>Jami:</span><span class="gold-text" id="cartTotal">0 so'm</span></div>
+        <button type="button" class="btn btn-gold" id="orderBtn" disabled>Buyurtma berish</button>
       </div>
-      <div class="item">
-        <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M10 2h4v3l2 3v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8l2-3z"/><path d="M8 12h8v5H8z"/></svg></div>
-        <div class="item-name"><b>Coca-Cola</b><span>1,5 litr</span></div>
-        <div class="price">20 000 so'm</div>
-      </div>
-      <div class="item">
-        <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M10 2h4v3l2 3v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8l2-3z"/><path d="M8 12h8v5H8z"/></svg></div>
-        <div class="item-name"><b>Fanta</b><span>1,5 litr</span></div>
-        <div class="price">20 000 so'm</div>
-      </div>
-      <div class="item">
-        <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17"/><circle cx="12" cy="13" r="2"/></svg></div>
-        <div class="item-name"><b>Limon choy</b><span>Issiq, limon bo'lagi bilan</span></div>
-        <div class="price">30 000 so'm</div>
-      </div>
-      <div class="item">
-        <div class="item-ico"><svg viewBox="0 0 24 24"><path d="M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 2c0 2 2 2 2 4M12 2c0 2 2 2 2 4"/></svg></div>
-        <div class="item-name"><b>Qahva</b><span>Xushbo'y, yangi damlangan</span></div>
-        <div class="price">10 000 so'm</div>
+      <div class="order" id="orderView">
+        <div class="cart-head"><h4 class="gold-text">Buyurtmangiz</h4></div>
+        <div id="orderItems"></div>
+        <div class="cart-total"><span>Jami:</span><span class="gold-text" id="orderTotal"></span></div>
+        <p class="order-note">Buyurtmani tasdiqlash uchun qo'ng'iroq qiling:</p>
+        <a href="tel:+998908220101" class="order-phone gold-text">+998 90 822 01 01</a>
+        <div class="order-actions">
+          <a href="tel:+998908220101" class="btn btn-gold">Qo'ng'iroq qilish</a>
+          <button type="button" class="btn btn-outline" id="backBtn">Savatga qaytish</button>
+        </div>
       </div>
     </div>
 
@@ -530,14 +598,106 @@
 </div>
 
 <script>
-  // Menyu tablari
+  // Menyu bo'limlari
+  var menuItems = document.querySelectorAll('#menuList .item');
   document.querySelectorAll('.tab').forEach(function(tab){
     tab.addEventListener('click', function(){
       document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
       tab.classList.add('active'); tab.setAttribute('aria-selected','true');
-      document.querySelectorAll('.menu-list').forEach(function(l){ l.hidden = l.id !== tab.dataset.tab; });
+      menuItems.forEach(function(it){
+        it.hidden = tab.dataset.tab !== 'hammasi' && it.dataset.cat !== tab.dataset.tab;
+      });
     });
   });
+
+  // Savat
+  var cart = []; // {name, price, qty}
+  function som(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + " so'm"; }
+  function findItem(name){
+    for (var i = 0; i < cart.length; i++){ if (cart[i].name === name) return cart[i]; }
+    return null;
+  }
+  function cartTotal(){ return cart.reduce(function(s, c){ return s + c.price * c.qty; }, 0); }
+  function cartQty(){ return cart.reduce(function(s, c){ return s + c.qty; }, 0); }
+
+  function renderCart(){
+    var box = document.getElementById('cartItems');
+    box.innerHTML = '';
+    cart.forEach(function(c){
+      var row = document.createElement('div'); row.className = 'cart-row';
+      var nm = document.createElement('div'); nm.className = 'nm';
+      var b = document.createElement('b'); b.textContent = c.name;
+      var sp = document.createElement('span'); sp.textContent = som(c.price);
+      nm.appendChild(b); nm.appendChild(sp);
+      var q = document.createElement('div'); q.className = 'qty';
+      var minus = document.createElement('button'); minus.type = 'button'; minus.textContent = '−';
+      minus.setAttribute('aria-label', c.name + ' sonini kamaytirish');
+      var out = document.createElement('output'); out.textContent = c.qty;
+      var plus = document.createElement('button'); plus.type = 'button'; plus.textContent = '+';
+      plus.setAttribute('aria-label', c.name + ' sonini oshirish');
+      minus.addEventListener('click', function(){ changeQty(c.name, -1); });
+      plus.addEventListener('click', function(){ changeQty(c.name, 1); });
+      q.appendChild(minus); q.appendChild(out); q.appendChild(plus);
+      var sum = document.createElement('div'); sum.className = 'sum'; sum.textContent = som(c.price * c.qty);
+      row.appendChild(nm); row.appendChild(q); row.appendChild(sum);
+      box.appendChild(row);
+    });
+    var n = cartQty();
+    document.getElementById('cartCount').textContent = n + ' ta taom';
+    document.getElementById('cartTotal').textContent = som(cartTotal());
+    document.getElementById('cartEmpty').style.display = cart.length ? 'none' : '';
+    document.getElementById('orderBtn').disabled = !cart.length;
+  }
+
+  function changeQty(name, d){
+    var c = findItem(name);
+    if (!c) return;
+    c.qty += d;
+    if (c.qty <= 0) cart.splice(cart.indexOf(c), 1);
+    renderCart();
+  }
+
+  menuItems.forEach(function(it){
+    var btn = it.querySelector('.add-btn');
+    var timer;
+    btn.addEventListener('click', function(){
+      var c = findItem(it.dataset.name);
+      if (c) c.qty++;
+      else cart.push({ name: it.dataset.name, price: Number(it.dataset.price), qty: 1 });
+      renderCart();
+      showCart();
+      btn.textContent = "Qo'shildi ✓"; btn.classList.add('added');
+      clearTimeout(timer);
+      timer = setTimeout(function(){ btn.textContent = 'Savatga'; btn.classList.remove('added'); }, 1200);
+    });
+  });
+
+  function showCart(){
+    document.getElementById('cartView').style.display = '';
+    document.getElementById('orderView').classList.remove('show');
+  }
+
+  document.getElementById('orderBtn').addEventListener('click', function(){
+    if (!cart.length) return;
+    var box = document.getElementById('orderItems');
+    box.innerHTML = '';
+    cart.forEach(function(c){
+      var row = document.createElement('div'); row.className = 'cart-row';
+      var nm = document.createElement('div'); nm.className = 'nm';
+      var b = document.createElement('b'); b.textContent = c.name;
+      var sp = document.createElement('span'); sp.textContent = c.qty + ' × ' + som(c.price);
+      nm.appendChild(b); nm.appendChild(sp);
+      var sum = document.createElement('div'); sum.className = 'sum'; sum.textContent = som(c.price * c.qty);
+      row.appendChild(nm); row.appendChild(sum);
+      box.appendChild(row);
+    });
+    document.getElementById('orderTotal').textContent = som(cartTotal());
+    document.getElementById('cartView').style.display = 'none';
+    document.getElementById('orderView').classList.add('show');
+    document.getElementById('savat').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  document.getElementById('backBtn').addEventListener('click', showCart);
+  renderCart();
 
   // Vaqtlar ro'yxati (9:00 – 21:30)
   var timeSel = document.getElementById('time');
