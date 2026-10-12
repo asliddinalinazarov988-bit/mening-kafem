@@ -177,6 +177,12 @@
   .order-phone{display:block;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:3px;line-height:1.2}
   .order-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .order-actions .btn{margin-top:20px}
+  .order form{padding:0;margin-top:22px;background:none;border:none;border-radius:0}
+  .order .field small{display:block;text-align:right;font-size:12px;color:var(--muted);margin-top:4px}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .order-error{display:none;margin-top:18px;text-align:center;color:#e05a5a;font-size:14px}
+  .order-error.show{display:block}
+  .order-error a{display:block;white-space:nowrap;font-family:'Bebas Neue',sans-serif;font-size:clamp(26px,8vw,34px);letter-spacing:3px;line-height:1.3}
 
   /* ---------- Amenities ---------- */
   .amen-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
@@ -206,12 +212,13 @@
   .field{margin-bottom:16px}
   .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px;font-weight:500}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  input,select{
+  input,select,textarea{
     width:100%;padding:14px 16px;border-radius:12px;background:var(--black);border:1px solid rgba(212,175,55,.25);
     color:var(--text);font-family:inherit;font-size:15px;outline:none;transition:border .2s;
     color-scheme:dark
   }
-  input:focus,select:focus{border-color:var(--gold)}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+  textarea{resize:vertical;min-height:90px}
   form .btn{width:100%;margin-top:6px}
   .success{display:none;text-align:center;padding:10px 0}
   .success.show{display:block}
@@ -453,12 +460,40 @@
         <div class="cart-head"><h4 class="gold-text">Buyurtmangiz</h4></div>
         <div id="orderItems"></div>
         <div class="cart-total"><span>Jami:</span><span class="gold-text" id="orderTotal"></span></div>
-        <p class="order-note">Buyurtmani tasdiqlash uchun qo'ng'iroq qiling:</p>
-        <a href="tel:+998908220101" class="order-phone gold-text">+998 90 822 01 01</a>
-        <div class="order-actions">
-          <a href="tel:+998908220101" class="btn btn-gold">Qo'ng'iroq qilish</a>
-          <button type="button" class="btn btn-outline" id="backBtn">Savatga qaytish</button>
-        </div>
+        <form id="orderForm" novalidate>
+          <div class="field">
+            <label for="oName">Ismingiz</label>
+            <input id="oName" name="name" type="text" placeholder="Masalan: Aziz" maxlength="60" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="oPhone">Telefon raqamingiz</label>
+            <input id="oPhone" name="phone" type="tel" placeholder="+998 __ ___ __ __" maxlength="20" autocomplete="tel" required>
+          </div>
+          <div class="field">
+            <label for="oNote">Manzil yoki izoh</label>
+            <textarea id="oNote" name="note" rows="3" maxlength="300" placeholder="Masalan: Termiz, Al-Hakim at-Termiziy ko'chasi 12 yoki «Olib ketaman»" required></textarea>
+            <small id="oNoteCount">0 / 300</small>
+          </div>
+          <div class="hp" aria-hidden="true">
+            <label for="oWebsite">Bu maydonni bo'sh qoldiring</label>
+            <input id="oWebsite" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
+          <div class="order-error" id="orderError" role="alert">
+            <span id="orderErrorText">Buyurtma yuborilmadi.</span>
+            <span id="orderCall">Iltimos, qo'ng'iroq qiling:
+              <a href="tel:+998908220101" class="gold-text">+998 90 822 01 01</a></span>
+          </div>
+          <div class="order-actions">
+            <button type="submit" class="btn btn-gold" id="sendBtn">Yuborish</button>
+            <button type="button" class="btn btn-outline" id="backBtn">Savatga qaytish</button>
+          </div>
+        </form>
+      </div>
+      <div class="success" id="orderSuccess" role="status">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
+        <h5>Rahmat! Buyurtmangiz qabul qilindi</h5>
+        <p>Tez orada siz bilan bog'lanamiz.</p>
+        <button type="button" class="btn btn-gold" id="newOrderBtn">Menyuga qaytish</button>
       </div>
     </div>
 
@@ -675,6 +710,7 @@
   function showCart(){
     document.getElementById('cartView').style.display = '';
     document.getElementById('orderView').classList.remove('show');
+    document.getElementById('orderSuccess').classList.remove('show');
   }
 
   document.getElementById('orderBtn').addEventListener('click', function(){
@@ -694,10 +730,99 @@
     document.getElementById('orderTotal').textContent = som(cartTotal());
     document.getElementById('cartView').style.display = 'none';
     document.getElementById('orderView').classList.add('show');
+    document.getElementById('orderError').classList.remove('show');
+    orderOpenedAt = Date.now();
     document.getElementById('savat').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   document.getElementById('backBtn').addEventListener('click', showCart);
+  document.getElementById('newOrderBtn').addEventListener('click', function(){
+    showCart();
+    document.getElementById('menyu').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   renderCart();
+
+  // Buyurtmani Telegram'ga yuborish (Netlify funksiyasi orqali)
+  var orderOpenedAt = 0;
+  var COOLDOWN_MS = 60000;
+  var orderForm = document.getElementById('orderForm');
+  var oName = document.getElementById('oName');
+  var oPhone = document.getElementById('oPhone');
+  var oNote = document.getElementById('oNote');
+  var sendBtn = document.getElementById('sendBtn');
+
+  oNote.addEventListener('input', function(){
+    document.getElementById('oNoteCount').textContent = oNote.value.length + ' / 300';
+  });
+
+  function orderError(msg, call){
+    document.getElementById('orderErrorText').textContent = msg;
+    document.getElementById('orderCall').style.display = call ? '' : 'none';
+    document.getElementById('orderError').classList.add('show');
+  }
+  function mark(f, bad){ f.style.borderColor = bad ? '#e05a5a' : ''; return !bad; }
+  function lastSent(){
+    try { return Number(localStorage.getItem('lastOrderAt')) || 0; } catch (e) { return 0; }
+  }
+
+  orderForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    document.getElementById('orderError').classList.remove('show');
+    if (!cart.length) return;
+
+    var name = oName.value.trim();
+    var phone = oPhone.value.trim();
+    var note = oNote.value.trim();
+    var digits = phone.replace(/\D/g, '');
+    var ok = mark(oName, name.length < 2 || name.length > 60);
+    ok = mark(oPhone, !/^[+\d\s()-]+$/.test(phone) || digits.length < 9 || digits.length > 15) && ok;
+    ok = mark(oNote, note.length < 3 || note.length > 300) && ok;
+    if (!ok){
+      orderError("Iltimos, ism, telefon raqam va manzil yoki izohni to'g'ri kiriting.");
+      return;
+    }
+
+    var wait = COOLDOWN_MS - (Date.now() - lastSent());
+    if (wait > 0){
+      orderError('Siz hozirgina buyurtma berdingiz. ' + Math.ceil(wait / 1000) + ' soniyadan keyin qayta urinib ko\'ring.');
+      return;
+    }
+
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Yuborilmoqda...';
+    fetch('/.netlify/functions/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        phone: phone,
+        note: note,
+        items: cart.map(function(c){ return { name: c.name, qty: c.qty }; }),
+        website: document.getElementById('oWebsite').value,
+        elapsed: Date.now() - orderOpenedAt
+      })
+    })
+      .then(function(res){
+        return res.json().catch(function(){ return {}; }).then(function(data){
+          if (!res.ok || !data.ok) throw new Error(data.error || 'Buyurtma yuborilmadi');
+        });
+      })
+      .then(function(){
+        try { localStorage.setItem('lastOrderAt', String(Date.now())); } catch (e) {}
+        cart = [];
+        renderCart();
+        orderForm.reset();
+        document.getElementById('oNoteCount').textContent = '0 / 300';
+        document.getElementById('orderView').classList.remove('show');
+        document.getElementById('orderSuccess').classList.add('show');
+      })
+      .catch(function(err){
+        orderError((err && err.message && !/fetch|network/i.test(err.message) ? err.message : 'Buyurtma yuborilmadi') + '.', true);
+      })
+      .then(function(){
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Yuborish';
+      });
+  });
 
   // Vaqtlar ro'yxati (9:00 – 21:30)
   var timeSel = document.getElementById('time');
