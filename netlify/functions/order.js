@@ -71,7 +71,9 @@ async function saveOrder(row) {
       headers: {
         'Content-Type': 'application/json',
         apikey: key,
-        Authorization: `Bearer ${key}`,
+        // Eski service_role kaliti (JWT) Authorization'da ham yuboriladi;
+        // yangi sb_secret_... kalitlari uchun apikey yetarli.
+        ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}),
         Prefer: 'return=minimal',
       },
       body: JSON.stringify(row),
