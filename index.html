@@ -803,7 +803,11 @@
     })
       .then(function(res){
         return res.json().catch(function(){ return {}; }).then(function(data){
-          if (!res.ok || !data.ok) throw new Error(data.error || 'Buyurtma yuborilmadi');
+          if (!res.ok || !data.ok){
+            var err = new Error(data.error || 'Buyurtma yuborilmadi');
+            err.code = data.code || ('HTTP_' + res.status);
+            throw err;
+          }
         });
       })
       .then(function(){
@@ -816,7 +820,8 @@
         document.getElementById('orderSuccess').classList.add('show');
       })
       .catch(function(err){
-        orderError((err && err.message && !/fetch|network/i.test(err.message) ? err.message : 'Buyurtma yuborilmadi') + '.', true);
+        var msg = err && err.code ? err.message : 'Buyurtma yuborilmadi';
+        orderError(msg + (err && err.code ? ' (xato kodi: ' + err.code + ')' : '') + '.', true);
       })
       .then(function(){
         sendBtn.disabled = false;

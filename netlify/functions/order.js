@@ -65,7 +65,7 @@ exports.handler = async (event) => {
     // Qaysi o'zgaruvchi yetishmayotgani Netlify funksiya loglarida ko'rinadi.
     const missing = [!token && 'TELEGRAM_BOT_TOKEN', !chatId && 'TELEGRAM_CHAT_ID'].filter(Boolean);
     console.error('Muhit o\'zgaruvchisi topilmadi:', missing.join(', '));
-    return reply(500, { ok: false, error: 'Buyurtma yuborilmadi' });
+    return reply(500, { ok: false, error: 'Buyurtma yuborilmadi', code: 'NO_' + missing.join('_AND_') });
   }
 
   if (!event.body || event.body.length > LIMITS.body) {
@@ -143,11 +143,12 @@ exports.handler = async (event) => {
     const out = await res.json().catch(() => ({}));
     if (!res.ok || !out.ok) {
       console.error('Telegram xatosi:', res.status, out.description);
-      return reply(502, { ok: false, error: 'Buyurtma yuborilmadi' });
+      // Telegram javobi (masalan, "chat not found") maxfiy emas — sababni topish uchun qaytariladi.
+      return reply(502, { ok: false, error: 'Buyurtma yuborilmadi', code: `TG_${res.status}: ${out.description || 'noma\'lum'}` });
     }
   } catch (e) {
     console.error('Telegram bilan aloqa yo\'q:', e.message);
-    return reply(502, { ok: false, error: 'Buyurtma yuborilmadi' });
+    return reply(502, { ok: false, error: 'Buyurtma yuborilmadi', code: 'TG_NETWORK' });
   }
 
   return reply(200, { ok: true });
