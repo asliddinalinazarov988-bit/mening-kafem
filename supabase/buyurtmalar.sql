@@ -7,7 +7,8 @@ create table if not exists public.buyurtmalar (
   izoh       text    not null,
   taomlar    jsonb   not null,  -- [{ "nom": "Burger", "soni": 2, "narx": 39000 }, ...]
   jami       integer not null,  -- so'mda
-  rozilik    boolean not null default false
+  rozilik    boolean not null default false,
+  holat      text    not null default 'yangi'  -- yangi / tayyorlanmoqda / yetkazildi ...
 );
 
 -- RLS yoqilgan, siyosat yo'q: anon kalit bilan hech kim o'qiy/yoza olmaydi.
