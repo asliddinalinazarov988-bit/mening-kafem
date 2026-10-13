@@ -19,5 +19,5 @@ Har bir buyurtma Telegram'ga yuborilishidan oldin Supabase'dagi `buyurtmalar` ja
 1. Supabase → **SQL Editor** da `supabase/buyurtmalar.sql` faylini bir marta ishga tushiring.
 2. Netlify → **Environment variables** ga qo'shing (Scopes va Deploy contexts yuqoridagidek):
    - `SUPABASE_URL` — Supabase → Project Settings → API → Project URL
-   - `SUPABASE_KEY` — o'sha joydagi **service_role** kaliti (maxfiy, faqat Netlify'da saqlang, kodga yozmang)
+   - `SUPABASE_SERVICE_ROLE_KEY` — o'sha joydagi **service_role** kaliti (maxfiy, faqat Netlify'da saqlang, kodga yozmang)
 3. Saytni qayta deploy qiling.
