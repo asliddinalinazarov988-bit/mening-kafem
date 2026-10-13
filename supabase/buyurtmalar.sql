@@ -12,5 +12,5 @@ create table if not exists public.buyurtmalar (
 );
 
 -- RLS yoqilgan, siyosat yo'q: anon kalit bilan hech kim o'qiy/yoza olmaydi.
--- Netlify funksiyasi service_role kaliti (SUPABASE_SERVICE_ROLE_KEY) bilan yozadi, u RLS ni chetlab o'tadi.
+-- Netlify funksiyasi service_role kaliti (SUPABASE_SECRET_KEY) bilan yozadi, u RLS ni chetlab o'tadi.
 alter table public.buyurtmalar enable row level security;

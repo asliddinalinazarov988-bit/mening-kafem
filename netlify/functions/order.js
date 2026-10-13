@@ -1,6 +1,6 @@
 // Buyurtmani Supabase'ga saqlab, keyin Telegram'ga yuboruvchi Netlify funksiyasi.
 // Kalitlar faqat Netlify muhit o'zgaruvchilaridan olinadi:
-//   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+//   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, SUPABASE_URL, SUPABASE_SECRET_KEY
 // Jadval: supabase/buyurtmalar.sql
 
 // Narxlar serverda saqlanadi — brauzerdan kelgan narxga ishonilmaydi.
@@ -59,9 +59,9 @@ function clean(v) {
 // Xato bo'lsa faqat logga yoziladi — Telegram'ga yuborish to'xtamaydi.
 async function saveOrder(row) {
   const url = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
-  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || '').trim();
+  const key = (process.env.SUPABASE_SECRET_KEY || '').trim();
   if (!url || !key) {
-    const missing = [!url && 'SUPABASE_URL', !key && 'SUPABASE_SERVICE_ROLE_KEY'].filter(Boolean);
+    const missing = [!url && 'SUPABASE_URL', !key && 'SUPABASE_SECRET_KEY'].filter(Boolean);
     console.error('Supabase sozlanmagan, buyurtma saqlanmadi:', missing.join(', '));
     return;
   }
@@ -136,6 +136,10 @@ exports.handler = async (event) => {
     return reply(400, { ok: false, error: "Manzil yoki izoh 3 dan 300 belgigacha bo'lishi kerak" });
   }
 
+  if (data.consent !== true) {
+    return reply(400, { ok: false, error: "Ma'lumotlardan foydalanishga rozilik berilmagan" });
+  }
+
   const items = Array.isArray(data.items) ? data.items : [];
   if (!items.length || items.length > LIMITS.items) {
     return reply(400, { ok: false, error: "Savat bo'sh" });
@@ -162,7 +166,7 @@ exports.handler = async (event) => {
     izoh: note,
     taomlar,
     jami: total,
-    rozilik: data.consent === true,
+    rozilik: true,
   });
 
   const text = [

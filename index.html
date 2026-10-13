@@ -180,6 +180,7 @@
   .order form{padding:0;margin-top:22px;background:none;border:none;border-radius:0}
   .order .field small{display:block;text-align:right;font-size:12px;color:var(--muted);margin-top:4px}
   .consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);margin-bottom:16px;cursor:pointer}
+  .consent a{font-weight:600;text-decoration:underline;text-decoration-color:var(--gold)}
   .consent input{width:18px;height:18px;padding:0;margin:1px 0 0;flex:none;accent-color:var(--gold)}
   .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
   .order-error{display:none;margin-top:18px;text-align:center;color:#e05a5a;font-size:14px}
@@ -478,7 +479,7 @@
           </div>
           <label class="consent" for="oConsent">
             <input id="oConsent" name="consent" type="checkbox" required>
-            <span>Ism, telefon va manzilim buyurtmani bajarish uchun saqlanishiga roziman</span>
+            <span>Ma'lumotlarim buyurtmani bajarish uchun ishlatilishiga roziman. <a href="privacy.html" target="_blank" class="gold-text">Maxfiylik siyosati</a></span>
           </label>
           <div class="hp" aria-hidden="true">
             <label for="oWebsite">Bu maydonni bo'sh qoldiring</label>
@@ -630,6 +631,7 @@
       <a href="tel:+998908220101" aria-label="Qo'ng'iroq qilish"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></a>
     </div>
     <p>© <span id="year"></span> American Fast Food. Barcha huquqlar himoyalangan.</p>
+    <p><a href="privacy.html" class="gold-text">Maxfiylik siyosati</a></p>
   </div>
 </footer>
 
@@ -787,7 +789,7 @@
       return;
     }
     if (!document.getElementById('oConsent').checked){
-      orderError("Buyurtma berish uchun ma'lumotlaringiz saqlanishiga rozilik belgisini qo'ying.");
+      orderError("Buyurtma berish uchun ma'lumotlaringiz ishlatilishiga rozilik belgisini qo'ying.");
       return;
     }
 
