@@ -1,6 +1,7 @@
-// Buyurtmani Telegram'ga yuboruvchi Netlify funksiyasi.
-// Bot tokeni va chat ID faqat Netlify muhit o'zgaruvchilaridan olinadi:
-//   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+// Buyurtmani Supabase'ga saqlab, keyin Telegram'ga yuboruvchi Netlify funksiyasi.
+// Kalitlar faqat Netlify muhit o'zgaruvchilaridan olinadi:
+//   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, SUPABASE_URL, SUPABASE_KEY
+// Jadval: supabase/buyurtmalar.sql
 
 // Narxlar serverda saqlanadi — brauzerdan kelgan narxga ishonilmaydi.
 // index.html dagi data-price qiymatlari bilan bir xil bo'lishi kerak.
@@ -52,6 +53,35 @@ function som(n) {
 
 function clean(v) {
   return typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : '';
+}
+
+// Buyurtmani Supabase'dagi "buyurtmalar" jadvaliga yozadi.
+// Xato bo'lsa faqat logga yoziladi — Telegram'ga yuborish to'xtamaydi.
+async function saveOrder(row) {
+  const url = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
+  const key = (process.env.SUPABASE_KEY || '').trim();
+  if (!url || !key) {
+    const missing = [!url && 'SUPABASE_URL', !key && 'SUPABASE_KEY'].filter(Boolean);
+    console.error('Supabase sozlanmagan, buyurtma saqlanmadi:', missing.join(', '));
+    return;
+  }
+  try {
+    const res = await fetch(`${url}/rest/v1/buyurtmalar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(row),
+    });
+    if (!res.ok) {
+      console.error('Supabase xatosi:', res.status, await res.text().catch(() => ''));
+    }
+  } catch (e) {
+    console.error('Supabase bilan aloqa yo\'q:', e.message);
+  }
 }
 
 exports.handler = async (event) => {
@@ -111,6 +141,7 @@ exports.handler = async (event) => {
 
   let total = 0;
   const lines = [];
+  const taomlar = [];
   for (const it of items) {
     const itemName = clean(it && it.name);
     const qty = Number(it && it.qty);
@@ -119,8 +150,18 @@ exports.handler = async (event) => {
       return reply(400, { ok: false, error: "Savatda noto'g'ri taom bor" });
     }
     total += price * qty;
+    taomlar.push({ nom: itemName, soni: qty, narx: price });
     lines.push(`• ${esc(itemName)} — ${qty} × ${som(price)} = ${som(price * qty)}`);
   }
+
+  await saveOrder({
+    ism: name,
+    telefon: phone,
+    izoh: note,
+    taomlar,
+    jami: total,
+    rozilik: data.consent === true,
+  });
 
   const text = [
     '🍔 <b>Yangi buyurtma</b>',
