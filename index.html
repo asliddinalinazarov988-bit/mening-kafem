@@ -640,7 +640,27 @@
   <a href="#menyu" class="btn btn-outline">Menyuni ko'ring</a>
 </div>
 
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
+  // Telegram Mini App: sayt Telegram ichida ochilganda ishlaydi, oddiy brauzerda tg = null
+  var tg = window.Telegram && Telegram.WebApp && Telegram.WebApp.initData ? Telegram.WebApp : null;
+  if (tg){ tg.ready(); tg.expand(); }
+  function tgFillName(){
+    var u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+    var el = document.getElementById('oName');
+    if (!u || !el || el.value.trim()) return;
+    el.value = [u.first_name, u.last_name].filter(Boolean).join(' ').slice(0, 60);
+  }
+  function tgCloseButton(show){
+    if (!tg || !tg.MainButton) return;
+    if (show){
+      tg.MainButton.setParams({ text: 'Telegram oynasini yopish', color: '#d4af37', text_color: '#0b0b0b', is_visible: true });
+    } else {
+      tg.MainButton.hide();
+    }
+  }
+  if (tg && tg.MainButton){ tg.MainButton.onClick(function(){ tg.close(); }); }
+
   // Menyu bo'limlari
   var menuItems = document.querySelectorAll('#menuList .item');
   document.querySelectorAll('.tab').forEach(function(tab){
@@ -744,6 +764,7 @@
   });
   document.getElementById('backBtn').addEventListener('click', showCart);
   document.getElementById('newOrderBtn').addEventListener('click', function(){
+    tgCloseButton(false);
     showCart();
     document.getElementById('menyu').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
@@ -757,6 +778,7 @@
   var oPhone = document.getElementById('oPhone');
   var oNote = document.getElementById('oNote');
   var sendBtn = document.getElementById('sendBtn');
+  tgFillName();
 
   oNote.addEventListener('input', function(){
     document.getElementById('oNoteCount').textContent = oNote.value.length + ' / 300';
@@ -831,6 +853,8 @@
         document.getElementById('oNoteCount').textContent = '0 / 300';
         document.getElementById('orderView').classList.remove('show');
         document.getElementById('orderSuccess').classList.add('show');
+        tgFillName();
+        tgCloseButton(true);
       })
       .catch(function(err){
         var msg = err && err.code ? err.message : 'Buyurtma yuborilmadi';
