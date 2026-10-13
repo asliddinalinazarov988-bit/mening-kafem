@@ -15,6 +15,7 @@ const COMMANDS_TEXT = [
   'Buyruqlar:',
   '/bugun — bugungi buyurtmalar soni va jami summasi',
   '/buyurtmalar — oxirgi 10 ta buyurtma',
+  '/savdo — oxirgi 5 kundagi savdo',
   '/start — buyruqlar ro\'yxati',
 ].join('\n');
 
@@ -82,30 +83,70 @@ async function supabaseSelect(query) {
   return res.json();
 }
 
-async function todayText() {
-  const now = new Date(Date.now() + TZ_OFFSET_MS);
-  const startMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - TZ_OFFSET_MS;
-  const from = new Date(startMs).toISOString();
-  const to = new Date(startMs + 24 * 60 * 60 * 1000).toISOString();
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-  let count = 0;
-  let sum = 0;
+// Toshkent vaqti bo'yicha bugungi kun boshi (UTC millisekundlarda).
+function tashkentDayStart() {
+  const now = new Date(Date.now() + TZ_OFFSET_MS);
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - TZ_OFFSET_MS;
+}
+
+function tashkentDate(ms) {
+  const d = new Date(ms + TZ_OFFSET_MS);
+  return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}.${d.getUTCFullYear()}`;
+}
+
+// [fromMs, toMs) oralig'idagi buyurtmalar (yaratilgan, jami) — sahifalab o'qiladi.
+async function ordersBetween(fromMs, toMs) {
+  const from = encodeURIComponent(new Date(fromMs).toISOString());
+  const to = encodeURIComponent(new Date(toMs).toISOString());
+  const all = [];
   for (let offset = 0; ; offset += PAGE) {
     const rows = await supabaseSelect(
-      `select=jami&yaratilgan=gte.${encodeURIComponent(from)}&yaratilgan=lt.${encodeURIComponent(to)}` +
-      `&order=id.asc&limit=${PAGE}&offset=${offset}`
+      `select=yaratilgan,jami&yaratilgan=gte.${from}&yaratilgan=lt.${to}&order=id.asc&limit=${PAGE}&offset=${offset}`
     );
-    count += rows.length;
-    sum += rows.reduce((s, r) => s + (Number(r.jami) || 0), 0);
+    all.push(...rows);
     if (rows.length < PAGE) break;
   }
+  return all;
+}
 
-  const date = `${pad(now.getUTCDate())}.${pad(now.getUTCMonth() + 1)}.${now.getUTCFullYear()}`;
+function sumOf(rows) {
+  return rows.reduce((s, r) => s + (Number(r.jami) || 0), 0);
+}
+
+async function todayText() {
+  const startMs = tashkentDayStart();
+  const rows = await ordersBetween(startMs, startMs + DAY_MS);
   return [
-    `📅 <b>Bugun (${date})</b>`,
+    `📅 <b>Bugun (${tashkentDate(startMs)})</b>`,
     '',
-    `Buyurtmalar soni: <b>${count} ta</b>`,
-    `Jami summa: <b>${som(sum)}</b>`,
+    `Buyurtmalar soni: <b>${rows.length} ta</b>`,
+    `Jami summa: <b>${som(sumOf(rows))}</b>`,
+  ].join('\n');
+}
+
+// Oxirgi 5 kun (bugun ham kiradi): har kun bo'yicha soni va summasi, oxirida jami.
+async function salesText(days = 5) {
+  const todayMs = tashkentDayStart();
+  const fromMs = todayMs - (days - 1) * DAY_MS;
+  const rows = await ordersBetween(fromMs, todayMs + DAY_MS);
+
+  const lines = [];
+  for (let i = 0; i < days; i++) {
+    const dayMs = todayMs - i * DAY_MS;
+    const dayRows = rows.filter((r) => {
+      const t = new Date(r.yaratilgan).getTime();
+      return t >= dayMs && t < dayMs + DAY_MS;
+    });
+    lines.push(`${tashkentDate(dayMs)}${i === 0 ? ' (bugun)' : ''} — ${dayRows.length} ta, ${som(sumOf(dayRows))}`);
+  }
+  return [
+    `📊 <b>Oxirgi ${days} kundagi savdo</b>`,
+    '',
+    lines.join('\n'),
+    '',
+    `Jami: <b>${rows.length} ta buyurtma, ${som(sumOf(rows))}</b>`,
   ].join('\n');
 }
 
@@ -162,9 +203,12 @@ exports.handler = async (event) => {
   try {
     if (command === '/bugun') return sendMessage(chatId, await todayText());
     if (command === '/buyurtmalar') return sendMessage(chatId, await lastOrdersText());
+    if (command === '/savdo') return sendMessage(chatId, await salesText());
   } catch (e) {
     console.error(e.message);
-    return sendMessage(chatId, '⚠️ Ma\'lumotni olib bo\'lmadi. Birozdan keyin qayta urinib ko\'ring.');
+    // Sabab faqat buyurtmalar chatiga ko'rsatiladi; unda kalit yo'q (masalan, ustun topilmadi).
+    return sendMessage(chatId, '⚠️ Ma\'lumotni olib bo\'lmadi. Birozdan keyin qayta urinib ko\'ring.\n\n' +
+      `<i>Sabab: ${esc(e.message.slice(0, 300))}</i>`);
   }
   return sendMessage(chatId, COMMANDS_TEXT);
 };

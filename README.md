@@ -31,6 +31,7 @@ Buyruqlar faqat `TELEGRAM_CHAT_ID` dagi chatda ishlaydi (ma'lumot Supabase'dagi 
 - `/start` — buyruqlar ro'yxati
 - `/bugun` — bugungi (Toshkent vaqti) buyurtmalar soni va jami summasi
 - `/buyurtmalar` — oxirgi 10 ta buyurtma: vaqt, ism, telefon, jami
+- `/savdo` — oxirgi 5 kundagi savdo (bugun ham kiradi): har kun bo'yicha soni va summasi, oxirida jami
 
 Boshqa har qanday chatga bot «Buyurtma berish uchun pastdagi «Menyu» tugmasini bosing» deb javob beradi.
 

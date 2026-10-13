@@ -101,11 +101,12 @@ exports.handler = async (event) => {
         { command: 'start', description: 'Buyruqlar ro\'yxati' },
         { command: 'bugun', description: 'Bugungi buyurtmalar soni va summasi' },
         { command: 'buyurtmalar', description: 'Oxirgi 10 ta buyurtma' },
+        { command: 'savdo', description: 'Oxirgi 5 kundagi savdo' },
       ],
     });
-    rows.push({ ok: adminCmds.ok, title: adminCmds.ok ? 'Buyurtmalar chatidagi buyruqlar sozlandi' : 'Buyurtmalar chatidagi buyruqlar sozlanmadi', detail: adminCmds.ok ? '/start, /bugun, /buyurtmalar' : adminCmds.error });
+    rows.push({ ok: adminCmds.ok, title: adminCmds.ok ? 'Buyurtmalar chatidagi buyruqlar sozlandi' : 'Buyurtmalar chatidagi buyruqlar sozlanmadi', detail: adminCmds.ok ? '/start, /bugun, /buyurtmalar, /savdo' : adminCmds.error });
   } else {
-    rows.push({ ok: false, title: 'TELEGRAM_CHAT_ID topilmadi', detail: '/bugun va /buyurtmalar buyruqlari ishlashi uchun uni Netlify → Environment variables ga qo\'shing.' });
+    rows.push({ ok: false, title: 'TELEGRAM_CHAT_ID topilmadi', detail: '/bugun, /buyurtmalar va /savdo buyruqlari ishlashi uchun uni Netlify → Environment variables ga qo\'shing.' });
   }
 
   const menu = await tg(token, 'setChatMenuButton', {
