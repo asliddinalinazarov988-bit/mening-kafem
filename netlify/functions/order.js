@@ -59,11 +59,13 @@ exports.handler = async (event) => {
     return reply(405, { ok: false, error: "Ruxsat etilmagan so'rov" });
   }
 
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const token = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
+  const chatId = (process.env.TELEGRAM_CHAT_ID || '').trim();
   if (!token || !chatId) {
-    console.error('TELEGRAM_BOT_TOKEN yoki TELEGRAM_CHAT_ID sozlanmagan');
-    return reply(500, { ok: false, error: 'Server sozlanmagan' });
+    // Qaysi o'zgaruvchi yetishmayotgani Netlify funksiya loglarida ko'rinadi.
+    const missing = [!token && 'TELEGRAM_BOT_TOKEN', !chatId && 'TELEGRAM_CHAT_ID'].filter(Boolean);
+    console.error('Muhit o\'zgaruvchisi topilmadi:', missing.join(', '));
+    return reply(500, { ok: false, error: 'Buyurtma yuborilmadi' });
   }
 
   if (!event.body || event.body.length > LIMITS.body) {
