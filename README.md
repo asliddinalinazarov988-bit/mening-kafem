@@ -21,3 +21,19 @@ Mijoz formadagi rozilik belgisini qo'ymasa, buyurtma yuborilmaydi (`privacy.html
    - `SUPABASE_URL` — Supabase → Project Settings → API → Project URL
    - `SUPABASE_SECRET_KEY` — Project Settings → API Keys dagi **Secret key** (`sb_secret_...`) yoki eski **service_role** kaliti (maxfiy, faqat Netlify'da saqlang, kodga yozmang)
 3. Saytni qayta deploy qiling.
+
+## Telegram bot buyruqlari va Mini App
+
+`netlify/functions/telegram.js` — bot webhook'i. Telegram so'rovi faqat `X-Telegram-Bot-Api-Secret-Token` sarlavhasi to'g'ri bo'lsa qabul qilinadi (maxfiy belgi `TELEGRAM_BOT_TOKEN` ning sha256 xeshidan birinchi 32 belgi, alohida o'zgaruvchi kerak emas).
+
+Buyruqlar faqat `TELEGRAM_CHAT_ID` dagi chatda ishlaydi (ma'lumot Supabase'dagi `buyurtmalar` jadvalidan o'qiladi):
+
+- `/start` — buyruqlar ro'yxati
+- `/bugun` — bugungi (Toshkent vaqti) buyurtmalar soni va jami summasi
+- `/buyurtmalar` — oxirgi 10 ta buyurtma: vaqt, ism, telefon, jami
+
+Boshqa har qanday chatga bot «Buyurtma berish uchun pastdagi «Menyu» tugmasini bosing» deb javob beradi.
+
+Sozlash: deploydan keyin brauzerda `https://<sayt-manzili>/.netlify/functions/telegram-setup` ni bir marta oching. U webhook'ni shu saytga o'rnatadi, buyruqlar ro'yxatini va saytni Mini App qilib ochadigan «Menyu» tugmasini sozlaydi. Sayt manzili o'zgarsa, sahifani yangi manzilda qayta oching.
+
+Sayt Telegram ichida ochilganda ism maydoni Telegram profilidagi ism bilan to'ldiriladi, buyurtma qabul qilingach «Telegram oynasini yopish» tugmasi chiqadi. Oddiy brauzerda sayt avvalgidek ishlaydi.
