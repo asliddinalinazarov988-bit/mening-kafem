@@ -164,7 +164,9 @@ exports.handler = async (event) => {
     if (command === '/buyurtmalar') return sendMessage(chatId, await lastOrdersText());
   } catch (e) {
     console.error(e.message);
-    return sendMessage(chatId, '⚠️ Ma\'lumotni olib bo\'lmadi. Birozdan keyin qayta urinib ko\'ring.');
+    // Sabab faqat buyurtmalar chatiga ko'rsatiladi; unda kalit yo'q (masalan, ustun topilmadi).
+    return sendMessage(chatId, '⚠️ Ma\'lumotni olib bo\'lmadi. Birozdan keyin qayta urinib ko\'ring.\n\n' +
+      `<i>Sabab: ${esc(e.message.slice(0, 300))}</i>`);
   }
   return sendMessage(chatId, COMMANDS_TEXT);
 };
