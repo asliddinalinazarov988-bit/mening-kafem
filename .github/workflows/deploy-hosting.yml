@@ -1,0 +1,54 @@
+name: Hostingga yuklash
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-hosting
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Passenger tmp/restart.txt o'zgarganda ilovani qayta ishga tushiradi.
+      - name: tmp/restart.txt yaratish
+        run: |
+          mkdir -p tmp
+          date -u +"%Y-%m-%dT%H:%M:%SZ ${GITHUB_SHA}" > tmp/restart.txt
+
+      - name: Fayllarni yuklash (FTPS)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+          protocol: ftps
+          security: strict
+          local-dir: ./
+          server-dir: ./
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .htaccess
+            **/.htaccess
+            .well-known/**
+            **/*.log
+            tmp/**
+
+      - name: Ilovani qayta ishga tushirish (tmp/restart.txt)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+          protocol: ftps
+          security: strict
+          local-dir: ./tmp/
+          server-dir: ./tmp/
