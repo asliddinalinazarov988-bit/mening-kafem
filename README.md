@@ -38,3 +38,19 @@ Boshqa har qanday chatga bot «Buyurtma berish uchun pastdagi «Menyu» tugmasin
 Sozlash: deploydan keyin brauzerda `https://<sayt-manzili>/.netlify/functions/telegram-setup` ni bir marta oching. U webhook'ni shu saytga o'rnatadi, buyruqlar ro'yxatini va saytni Mini App qilib ochadigan «Menyu» tugmasini sozlaydi. Sayt manzili o'zgarsa, sahifani yangi manzilda qayta oching.
 
 Sayt Telegram ichida ochilganda ism maydoni Telegram profilidagi ism bilan to'ldiriladi, buyurtma qabul qilingach «Telegram oynasini yopish» tugmasi chiqadi. Oddiy brauzerda sayt avvalgidek ishlaydi.
+
+## Hostingga ko'chirish (cPanel, Node.js)
+
+Sayt Netlify'da ham avvalgidek ishlaydi. Hostingda esa `server.js` statik fayllarni beradi va `/.netlify/functions/order`, `telegram`, `telegram-setup` so'rovlarini `netlify/functions/` dagi funksiyalarga uzatadi (npm kutubxonalari kerak emas).
+
+1. cPanel → **Setup Node.js App** → **Create Application**:
+   - Node.js version: **22**
+   - Application mode: **Production**
+   - Application root: **burgersmash-app**
+   - Application URL: sayt domeni
+   - Application startup file: **server.js**
+2. Shu sahifadagi **Environment variables** ga qo'shing:
+   - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`
+   Keyin **Restart** ni bosing.
+3. GitHub → **Settings → Secrets and variables → Actions** ga `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` ni qo'shing (FTP hisobining papkasi `burgersmash-app` bo'lsin). `main` ga har push bo'lganda «Hostingga yuklash» workflow'i fayllarni FTPS orqali yuklaydi va `tmp/restart.txt` orqali ilovani qayta ishga tushiradi.
+4. Birinchi yuklashdan keyin brauzerda `https://<sayt-manzili>/.netlify/functions/telegram-setup` ni oching — bot webhook'i yangi manzilga o'tadi (shundan keyin bot buyruqlari hostingdagi server orqali ishlaydi).
