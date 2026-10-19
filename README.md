@@ -46,11 +46,11 @@ Sayt Netlify'da ham avvalgidek ishlaydi. Hostingda esa `server.js` statik faylla
 1. cPanel → **Setup Node.js App** → **Create Application**:
    - Node.js version: **22**
    - Application mode: **Production**
-   - Application root: **burgersmash-app**
+   - Application root: **americantermiz**
    - Application URL: sayt domeni
    - Application startup file: **server.js**
 2. Shu sahifadagi **Environment variables** ga qo'shing:
    - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`
    Keyin **Restart** ni bosing.
-3. GitHub → **Settings → Secrets and variables → Actions** ga `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` ni qo'shing (FTP hisobining papkasi `burgersmash-app` bo'lsin). `main` ga har push bo'lganda «Hostingga yuklash» workflow'i fayllarni FTPS orqali yuklaydi va `tmp/restart.txt` orqali ilovani qayta ishga tushiradi.
+3. Fayllarni yuklash: GitHub'da **Code → Download ZIP**, keyin cPanel → **File Manager** → `americantermiz` papkasiga **Upload** va **Extract** (`server.js` to'g'ridan-to'g'ri `americantermiz` ichida tursin). Har yangilashdan keyin **Setup Node.js App** → **Restart**.
 4. Birinchi yuklashdan keyin brauzerda `https://<sayt-manzili>/.netlify/functions/telegram-setup` ni oching — bot webhook'i yangi manzilga o'tadi (shundan keyin bot buyruqlari hostingdagi server orqali ishlaydi).
