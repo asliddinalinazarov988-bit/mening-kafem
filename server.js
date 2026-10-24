@@ -1,7 +1,8 @@
 // cPanel hosting (Node.js, Phusion Passenger) uchun server. Faqat Node'ning o'z modullari
 // (baza uchun "pg" paketi netlify/lib/db.js da ishlatiladi).
 //  - statik fayllar: / -> index.html, privacy.html va boshqalar;
-//  - /.netlify/functions/<nom> -> netlify/functions/<nom>.js dagi exports.handler (Netlify formatida).
+//  - /.netlify/functions/<nom> -> netlify/functions/<nom>.js dagi exports.handler (Netlify formatida);
+//  - /admin -> netlify/functions/admin.js (admin sahifa).
 // Netlify'da bu fayl ishlatilmaydi — u yerda funksiyalar avvalgidek ishlaydi.
 // Port: process.env.PORT (Passenger beradi), bo'lmasa 3000.
 
@@ -11,7 +12,7 @@ const path = require('path');
 
 const ROOT = __dirname;
 const PORT = process.env.PORT || 3000;
-const FUNCTIONS = new Set(['order', 'telegram', 'telegram-setup', 'kochirish', 'zaxira']);
+const FUNCTIONS = new Set(['order', 'telegram', 'telegram-setup', 'kochirish', 'zaxira', 'menyu', 'admin']);
 const MAX_BODY = 1024 * 1024; // 1 MB
 
 // Hech qachon berilmaydigan papka va fayllar.
@@ -165,6 +166,15 @@ function serveStatic(req, res, url) {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
+
+  if (url.pathname === '/admin' || url.pathname === '/admin/') {
+    runFunction('admin', req, res, url).catch((err) => {
+      console.error(err);
+      if (!res.headersSent) send(res, 500, 'Internal Server Error');
+      else res.end();
+    });
+    return;
+  }
 
   const m = url.pathname.match(/^\/\.netlify\/functions\/([^/]+)\/?$/);
   if (m) {

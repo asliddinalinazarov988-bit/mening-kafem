@@ -148,6 +148,11 @@
   }
   .add-btn:hover{background:var(--gold);color:var(--black)}
   .add-btn.added{background:var(--grad);color:var(--black);border-color:transparent}
+  .item.sold{filter:grayscale(1)}
+  .item.sold > *{opacity:.55}
+  .item.sold:hover{transform:none}
+  .add-btn:disabled{border-color:var(--muted);color:var(--muted);background:transparent;cursor:not-allowed}
+  .cart-stol{color:var(--gold-light);font-weight:700;font-size:15px;margin-bottom:6px}
 
   /* ---------- Savat ---------- */
   .cart{scroll-margin-top:90px;max-width:920px;margin:40px auto 0;padding:30px;border-radius:var(--radius);background:var(--black-3);border:1px solid var(--line)}
@@ -454,6 +459,7 @@
           <h4 class="gold-text">Savat</h4>
           <span class="cart-count" id="cartCount">0 ta taom</span>
         </div>
+        <p class="cart-stol" data-stol hidden></p>
         <div id="cartItems"></div>
         <p class="cart-empty" id="cartEmpty">Savat bo'sh. Menyudan taom tanlang.</p>
         <div class="cart-total"><span>Jami:</span><span class="gold-text" id="cartTotal">0 so'm</span></div>
@@ -461,6 +467,7 @@
       </div>
       <div class="order" id="orderView">
         <div class="cart-head"><h4 class="gold-text">Buyurtmangiz</h4></div>
+        <p class="cart-stol" data-stol hidden></p>
         <div id="orderItems"></div>
         <div class="cart-total"><span>Jami:</span><span class="gold-text" id="orderTotal"></span></div>
         <form id="orderForm" novalidate>
@@ -661,15 +668,30 @@
   }
   if (tg && tg.MainButton){ tg.MainButton.onClick(function(){ tg.close(); }); }
 
+  // Stol: sahifa ?stol=N (1–99) bilan ochilganda buyurtma shu stolga
+  var stol = (function(){
+    var m = /[?&]stol=(\d{1,2})(?:&|$)/.exec(location.search);
+    var n = m ? Number(m[1]) : 0;
+    return n >= 1 && n <= 99 ? n : null;
+  })();
+  if (stol){
+    document.querySelectorAll('[data-stol]').forEach(function(el){ el.textContent = '🪑 Stol ' + stol; el.hidden = false; });
+  }
+
   // Menyu bo'limlari
-  var menuItems = document.querySelectorAll('#menuList .item');
+  var menuList = document.getElementById('menuList');
+  var activeTab = 'hammasi';
+  function filterMenu(){
+    menuList.querySelectorAll('.item').forEach(function(it){
+      it.hidden = activeTab !== 'hammasi' && it.dataset.cat !== activeTab;
+    });
+  }
   document.querySelectorAll('.tab').forEach(function(tab){
     tab.addEventListener('click', function(){
       document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
       tab.classList.add('active'); tab.setAttribute('aria-selected','true');
-      menuItems.forEach(function(it){
-        it.hidden = tab.dataset.tab !== 'hammasi' && it.dataset.cat !== tab.dataset.tab;
-      });
+      activeTab = tab.dataset.tab;
+      filterMenu();
     });
   });
 
@@ -720,20 +742,71 @@
     renderCart();
   }
 
-  menuItems.forEach(function(it){
-    var btn = it.querySelector('.add-btn');
-    var timer;
-    btn.addEventListener('click', function(){
-      var c = findItem(it.dataset.name);
-      if (c) c.qty++;
-      else cart.push({ name: it.dataset.name, price: Number(it.dataset.price), qty: 1 });
-      renderCart();
-      showCart();
-      btn.textContent = "Qo'shildi ✓"; btn.classList.add('added');
-      clearTimeout(timer);
-      timer = setTimeout(function(){ btn.textContent = 'Savatga'; btn.classList.remove('added'); }, 1200);
-    });
+  menuList.addEventListener('click', function(e){
+    var btn = e.target.closest('.add-btn');
+    if (!btn || btn.disabled) return;
+    var it = btn.closest('.item');
+    var c = findItem(it.dataset.name);
+    if (c) c.qty++;
+    else cart.push({ name: it.dataset.name, price: Number(it.dataset.price), qty: 1 });
+    renderCart();
+    showCart();
+    btn.textContent = "Qo'shildi ✓"; btn.classList.add('added');
+    clearTimeout(btn._timer);
+    btn._timer = setTimeout(function(){ btn.textContent = 'Savatga'; btn.classList.remove('added'); }, 1200);
   });
+
+  // Menyuni bazadan olish (hostingda). Olib bo'lmasa sahifadagi yozilgan menyu qoladi.
+  var CAT = { burger: 'burgerlar', lavash: 'lavash', extra: 'boshqa', drink: 'ichimliklar' };
+  function renderMenu(list){
+    // Ikonkalar: shu nomli taomniki, bo'lmasa shu toifadagi birinchi taomniki
+    var icons = {}, catIcons = {};
+    menuList.querySelectorAll('.item').forEach(function(it){
+      var ico = it.querySelector('.item-ico');
+      icons[it.dataset.name] = ico.innerHTML;
+      if (!catIcons[it.dataset.cat]) catIcons[it.dataset.cat] = ico.innerHTML;
+    });
+    var frag = document.createDocumentFragment();
+    list.forEach(function(t){
+      var cat = CAT[t.toifa] || 'boshqa';
+      var it = document.createElement('div');
+      it.className = 'item reveal' + (t.belgi ? ' hot' : '') + (t.mavjud === false ? ' sold' : '');
+      it.dataset.cat = cat; it.dataset.name = t.nomi; it.dataset.price = t.narx;
+      var ico = document.createElement('div'); ico.className = 'item-ico';
+      ico.innerHTML = icons[t.nomi] || catIcons[cat] || catIcons.boshqa || '';
+      var nm = document.createElement('div'); nm.className = 'item-name';
+      var b = document.createElement('b'); b.textContent = t.nomi;
+      if (t.belgi){
+        var tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = String(t.belgi).toUpperCase();
+        b.appendChild(document.createTextNode(' ')); b.appendChild(tag);
+      }
+      var sp = document.createElement('span'); sp.textContent = t.tavsif || '';
+      nm.appendChild(b); nm.appendChild(sp);
+      var buy = document.createElement('div'); buy.className = 'item-buy';
+      var pr = document.createElement('div'); pr.className = 'price'; pr.textContent = t.narx_matn || som(t.narx);
+      var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'add-btn';
+      if (t.mavjud === false){ btn.disabled = true; btn.textContent = 'Tugadi'; }
+      else btn.textContent = 'Savatga';
+      buy.appendChild(pr); buy.appendChild(btn);
+      it.appendChild(ico); it.appendChild(nm); it.appendChild(buy);
+      frag.appendChild(it);
+    });
+    menuList.innerHTML = '';
+    menuList.appendChild(frag);
+    filterMenu();
+    menuList.querySelectorAll('.reveal').forEach(function(el){
+      if (window.revealObserver) revealObserver.observe(el); else el.classList.add('in');
+    });
+  }
+  fetch('/.netlify/functions/menyu')
+    .then(function(res){ return res.ok ? res.json() : null; })
+    .then(function(data){
+      var list = data && data.ok && Array.isArray(data.taomlar) ? data.taomlar.filter(function(t){
+        return t && typeof t.nomi === 'string' && Number.isInteger(t.narx);
+      }) : [];
+      if (list.length) renderMenu(list);
+    })
+    .catch(function(){});
 
   function showCart(){
     document.getElementById('cartView').style.display = '';
@@ -831,6 +904,7 @@
         phone: phone,
         note: note,
         items: cart.map(function(c){ return { name: c.name, qty: c.qty }; }),
+        stol: stol,
         consent: document.getElementById('oConsent').checked,
         website: document.getElementById('oWebsite').value,
         elapsed: Date.now() - orderOpenedAt
@@ -905,7 +979,7 @@
 
   // Paydo bo'lish animatsiyasi
   if ('IntersectionObserver' in window){
-    var io = new IntersectionObserver(function(entries){
+    var io = window.revealObserver = new IntersectionObserver(function(entries){
       entries.forEach(function(en){ if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
     }, {threshold:.12});
     document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
