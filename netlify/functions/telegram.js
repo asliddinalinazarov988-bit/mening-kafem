@@ -1,13 +1,13 @@
 // Telegram bot webhook'i (sozlash: /.netlify/functions/telegram-setup).
-// Kalitlar faqat Netlify muhit o'zgaruvchilaridan olinadi:
-//   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, SUPABASE_URL, SUPABASE_SECRET_KEY
+// Kalitlar faqat muhit o'zgaruvchilaridan olinadi: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID;
+// baza — netlify/lib/db.js (hostingda PostgreSQL, Netlify'da Supabase).
 // So'rov faqat X-Telegram-Bot-Api-Secret-Token sarlavhasi to'g'ri bo'lsa qabul qilinadi.
 // Buyurtma ma'lumoti faqat TELEGRAM_CHAT_ID dagi chatga beriladi.
 
 const crypto = require('crypto');
+const db = require('../lib/db');
 
 const TZ_OFFSET_MS = 5 * 60 * 60 * 1000; // Toshkent: UTC+5, yozgi vaqt yo'q
-const PAGE = 1000;                        // Supabase bir so'rovda ko'pi bilan shuncha qator beradi
 
 const COMMANDS_TEXT = [
   '🍔 <b>American Fast Food boti</b>',
@@ -62,27 +62,6 @@ function sendMessage(chatId, text) {
 
 const okEmpty = { statusCode: 200, body: '' };
 
-async function supabaseSelect(query) {
-  const url = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
-  const key = (process.env.SUPABASE_SECRET_KEY || '').trim();
-  if (!url || !key) {
-    const missing = [!url && 'SUPABASE_URL', !key && 'SUPABASE_SECRET_KEY'].filter(Boolean);
-    throw new Error('Supabase sozlanmagan: ' + missing.join(', '));
-  }
-  const res = await fetch(`${url}/rest/v1/buyurtmalar?${query}`, {
-    headers: {
-      apikey: key,
-      // Eski service_role kaliti (JWT) Authorization'da ham yuboriladi;
-      // yangi sb_secret_... kalitlari uchun apikey yetarli.
-      ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}),
-    },
-  });
-  if (!res.ok) {
-    throw new Error(`Supabase xatosi ${res.status}: ${await res.text().catch(() => '')}`);
-  }
-  return res.json();
-}
-
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Toshkent vaqti bo'yicha bugungi kun boshi (UTC millisekundlarda).
@@ -96,19 +75,9 @@ function tashkentDate(ms) {
   return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}.${d.getUTCFullYear()}`;
 }
 
-// [fromMs, toMs) oralig'idagi buyurtmalar (yaratilgan, jami) — sahifalab o'qiladi.
-async function ordersBetween(fromMs, toMs) {
-  const from = encodeURIComponent(new Date(fromMs).toISOString());
-  const to = encodeURIComponent(new Date(toMs).toISOString());
-  const all = [];
-  for (let offset = 0; ; offset += PAGE) {
-    const rows = await supabaseSelect(
-      `select=yaratilgan,jami&yaratilgan=gte.${from}&yaratilgan=lt.${to}&order=id.asc&limit=${PAGE}&offset=${offset}`
-    );
-    all.push(...rows);
-    if (rows.length < PAGE) break;
-  }
-  return all;
+// [fromMs, toMs) oralig'idagi buyurtmalar (yaratilgan, jami).
+function ordersBetween(fromMs, toMs) {
+  return db.ordersBetween(new Date(fromMs).toISOString(), new Date(toMs).toISOString());
 }
 
 function sumOf(rows) {
@@ -117,12 +86,12 @@ function sumOf(rows) {
 
 async function todayText() {
   const startMs = tashkentDayStart();
-  const rows = await ordersBetween(startMs, startMs + DAY_MS);
+  const { count, sum } = await db.todayStats(new Date(startMs).toISOString(), new Date(startMs + DAY_MS).toISOString());
   return [
     `📅 <b>Bugun (${tashkentDate(startMs)})</b>`,
     '',
-    `Buyurtmalar soni: <b>${rows.length} ta</b>`,
-    `Jami summa: <b>${som(sumOf(rows))}</b>`,
+    `Buyurtmalar soni: <b>${count} ta</b>`,
+    `Jami summa: <b>${som(sum)}</b>`,
   ].join('\n');
 }
 
@@ -151,7 +120,7 @@ async function salesText(days = 5) {
 }
 
 async function lastOrdersText() {
-  const rows = await supabaseSelect('select=yaratilgan,ism,telefon,jami&order=yaratilgan.desc&limit=10');
+  const rows = await db.lastOrders(10);
   if (!rows.length) return 'Hozircha buyurtmalar yo\'q.';
   const lines = rows.map((r, i) => [
     `<b>${i + 1}.</b> 🕒 ${tashkentTime(r.yaratilgan)}`,

@@ -41,7 +41,7 @@ Sayt Telegram ichida ochilganda ism maydoni Telegram profilidagi ism bilan to'ld
 
 ## Hostingga ko'chirish (cPanel, Node.js)
 
-Sayt Netlify'da ham avvalgidek ishlaydi. Hostingda esa `server.js` statik fayllarni beradi va `/.netlify/functions/order`, `telegram`, `telegram-setup` so'rovlarini `netlify/functions/` dagi funksiyalarga uzatadi (npm kutubxonalari kerak emas).
+Sayt Netlify'da ham avvalgidek ishlaydi. Hostingda esa `server.js` statik fayllarni beradi va `/.netlify/functions/order`, `telegram`, `telegram-setup` so'rovlarini (shuningdek `kochirish`, `zaxira`) `netlify/functions/` dagi funksiyalarga uzatadi.
 
 1. cPanel → **Setup Node.js App** → **Create Application**:
    - Node.js version: **22**
@@ -51,6 +51,7 @@ Sayt Netlify'da ham avvalgidek ishlaydi. Hostingda esa `server.js` statik faylla
    - Application startup file: **server.js**
 2. Shu sahifadagi **Environment variables** ga qo'shing:
    - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`
+   - baza uchun `PGHOST`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` (pastdagi bo'limga qarang)
    Keyin **Restart** ni bosing.
 3. Avtomatik yuklash: GitHub → **Settings → Secrets and variables → Actions** ga qo'shing:
    - `FTP_SERVER` — `de.ahost.cloud`
@@ -58,3 +59,27 @@ Sayt Netlify'da ham avvalgidek ishlaydi. Hostingda esa `server.js` statik faylla
    - `FTP_PASSWORD` — cPanel paroli
    `main` ga har push bo'lganda «Hostingga yuklash» workflow'i fayllarni FTPS orqali `americantermiz-app` ga yuklaydi va `tmp/restart.txt` orqali ilovani qayta ishga tushiradi. Qo'lda ishga tushirish: **Actions → Hostingga yuklash → Run workflow**.
 4. Birinchi yuklashdan keyin brauzerda `https://<sayt-manzili>/.netlify/functions/telegram-setup` ni oching — bot webhook'i yangi manzilga o'tadi (shundan keyin bot buyruqlari hostingdagi server orqali ishlaydi).
+
+## Buyurtmalar bazasi hostingdagi PostgreSQL'da
+
+Hostingda buyurtmalar o'sha serverdagi PostgreSQL'ga yoziladi (`netlify/lib/db.js`). Netlify'da (zaxira sayt) `PGDATABASE` yo'q, u yerda avvalgidek Supabase ishlatiladi. `/bugun`, `/buyurtmalar`, `/savdo` buyruqlari ham shu bazadan o'qiydi. Jadval birinchi ulanishda o'zi yaratiladi.
+
+1. cPanel → **PostgreSQL Databases** da baza va foydalanuvchi yarating, foydalanuvchini bazaga qo'shing.
+2. **Setup Node.js App** → **Environment variables** ga qo'shing (parolni kodga yozmang):
+   - `PGHOST` — `localhost`
+   - `PGDATABASE` — baza nomi
+   - `PGUSER` — foydalanuvchi
+   - `PGPASSWORD` — parol
+3. Shu sahifada **«Установить NPM пакеты»** (Run NPM Install) ni bosing — `pg` paketi o'rnatiladi. Keyin **Restart**. Paket o'rnatilmaguncha sayt Supabase bilan ishlashda davom etadi.
+4. Eski buyurtmalarni ko'chirish: brauzerda `https://DOMEN/.netlify/functions/kochirish` ni bir marta oching. Hostingdagi jadval bo'sh bo'lsa, Supabase'dagi barcha buyurtmalar (vaqti bilan) ko'chiriladi — «✅ N ta buyurtma ko'chirildi». Jadvalda buyurtma bo'lsa hech narsa qilinmaydi.
+5. Kunlik zaxira: cPanel → **Cron Jobs** da har kuni 03:00 ga qo'shing:
+   ```
+   0 3 * * * curl -s https://DOMEN/.netlify/functions/zaxira > /dev/null
+   ```
+   Zaxira `~/zaxira/buyurtmalar-YYYY-MM-DD.sql.gz` ga saqlanadi va Telegram'dagi buyurtmalar chatiga yuboriladi. Kuniga bir marta olinadi (qayta ochilsa «bugun zaxira olingan» deydi), 14 kundan eski fayllar o'chiriladi.
+
+Zaxiradan tiklash:
+
+```
+gunzip -c buyurtmalar-YYYY-MM-DD.sql.gz | psql -h localhost -U FOYDALANUVCHI BAZA
+```

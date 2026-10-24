@@ -1,7 +1,10 @@
-// Buyurtmani Supabase'ga saqlab, keyin Telegram'ga yuboruvchi Netlify funksiyasi.
-// Kalitlar faqat Netlify muhit o'zgaruvchilaridan olinadi:
-//   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, SUPABASE_URL, SUPABASE_SECRET_KEY
-// Jadval: supabase/buyurtmalar.sql
+// Buyurtmani bazaga saqlab, keyin Telegram'ga yuboruvchi Netlify funksiyasi.
+// Kalitlar faqat muhit o'zgaruvchilaridan olinadi:
+//   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+//   hostingda: PGHOST, PGDATABASE, PGUSER, PGPASSWORD; Netlify'da: SUPABASE_URL, SUPABASE_SECRET_KEY
+// Jadval: supabase/buyurtmalar.sql (hostingda netlify/lib/db.js o'zi yaratadi)
+
+const db = require('../lib/db');
 
 // Narxlar serverda saqlanadi — brauzerdan kelgan narxga ishonilmaydi.
 // index.html dagi data-price qiymatlari bilan bir xil bo'lishi kerak.
@@ -55,34 +58,13 @@ function clean(v) {
   return typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : '';
 }
 
-// Buyurtmani Supabase'dagi "buyurtmalar" jadvaliga yozadi.
+// Buyurtmani bazaga yozadi (hostingda PostgreSQL, Netlify'da Supabase — netlify/lib/db.js).
 // Xato bo'lsa faqat logga yoziladi — Telegram'ga yuborish to'xtamaydi.
 async function saveOrder(row) {
-  const url = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
-  const key = (process.env.SUPABASE_SECRET_KEY || '').trim();
-  if (!url || !key) {
-    const missing = [!url && 'SUPABASE_URL', !key && 'SUPABASE_SECRET_KEY'].filter(Boolean);
-    console.error('Supabase sozlanmagan, buyurtma saqlanmadi:', missing.join(', '));
-    return;
-  }
   try {
-    const res = await fetch(`${url}/rest/v1/buyurtmalar`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: key,
-        // Eski service_role kaliti (JWT) Authorization'da ham yuboriladi;
-        // yangi sb_secret_... kalitlari uchun apikey yetarli.
-        ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}),
-        Prefer: 'return=minimal',
-      },
-      body: JSON.stringify(row),
-    });
-    if (!res.ok) {
-      console.error('Supabase xatosi:', res.status, await res.text().catch(() => ''));
-    }
+    await db.saveOrder(row);
   } catch (e) {
-    console.error('Supabase bilan aloqa yo\'q:', e.message);
+    console.error('Buyurtma bazaga saqlanmadi:', e.message);
   }
 }
 

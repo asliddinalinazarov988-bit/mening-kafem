@@ -1,4 +1,5 @@
-// cPanel hosting (Node.js, Phusion Passenger) uchun server. Faqat Node'ning o'z modullari.
+// cPanel hosting (Node.js, Phusion Passenger) uchun server. Faqat Node'ning o'z modullari
+// (baza uchun "pg" paketi netlify/lib/db.js da ishlatiladi).
 //  - statik fayllar: / -> index.html, privacy.html va boshqalar;
 //  - /.netlify/functions/<nom> -> netlify/functions/<nom>.js dagi exports.handler (Netlify formatida).
 // Netlify'da bu fayl ishlatilmaydi — u yerda funksiyalar avvalgidek ishlaydi.
@@ -10,7 +11,7 @@ const path = require('path');
 
 const ROOT = __dirname;
 const PORT = process.env.PORT || 3000;
-const FUNCTIONS = new Set(['order', 'telegram', 'telegram-setup']);
+const FUNCTIONS = new Set(['order', 'telegram', 'telegram-setup', 'kochirish', 'zaxira']);
 const MAX_BODY = 1024 * 1024; // 1 MB
 
 // Hech qachon berilmaydigan papka va fayllar.
