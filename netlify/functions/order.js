@@ -7,6 +7,7 @@
 const db = require('../lib/db');
 
 // Narxlar serverda saqlanadi — brauzerdan kelgan narxga ishonilmaydi.
+// Hostingda narx bazadagi "menyu" jadvalidan olinadi; bu ro'yxat Netlify'da va baza javob bermaganda ishlatiladi.
 // index.html dagi data-price qiymatlari bilan bir xil bo'lishi kerak.
 const MENU = {
   'Burger': 39000,
@@ -27,6 +28,7 @@ const LIMITS = { name: 60, phone: 20, note: 300, items: 30, qty: 50, body: 5000 
 const MIN_FILL_MS = 3000;      // formani 3 soniyadan tez to'ldirish — bot belgisi
 const RATE_WINDOW_MS = 60000;  // bitta IP dan daqiqasiga
 const RATE_MAX = 3;            // ko'pi bilan 3 ta buyurtma
+const DB_TIMEOUT_MS = 5000;    // menyu narxlarini kutish
 
 // Oddiy xotiradagi cheklov (funksiya "issiq" turganda ishlaydi).
 const hits = new Map();
@@ -65,6 +67,24 @@ async function saveOrder(row) {
     await db.saveOrder(row);
   } catch (e) {
     console.error('Buyurtma bazaga saqlanmadi:', e.message);
+  }
+}
+
+// Hostingda savatdagi taomlarning bazadagi narxi va mavjudligi; baza javob bermasa null.
+async function dbPrices(names) {
+  let timer;
+  try {
+    return await Promise.race([
+      db.menuPrices(names),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('vaqt tugadi')), DB_TIMEOUT_MS);
+      }),
+    ]);
+  } catch (e) {
+    console.error('Menyu narxlari olinmadi:', e.message);
+    return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -122,9 +142,27 @@ exports.handler = async (event) => {
     return reply(400, { ok: false, error: "Ma'lumotlardan foydalanishga rozilik berilmagan" });
   }
 
+  // Stol raqami ixtiyoriy (sahifa ?stol=N bilan ochilganda keladi): 1–99.
+  let stol = null;
+  if (data.stol !== undefined && data.stol !== null && data.stol !== '') {
+    const s = String(data.stol).trim();
+    stol = /^\d{1,2}$/.test(s) ? Number(s) : 0;
+    if (stol < 1 || stol > 99) {
+      return reply(400, { ok: false, error: "Stol raqami noto'g'ri" });
+    }
+  }
+
   const items = Array.isArray(data.items) ? data.items : [];
   if (!items.length || items.length > LIMITS.items) {
     return reply(400, { ok: false, error: "Savat bo'sh" });
+  }
+
+  // Hostingda narxlar bazadan; baza javob bermasa — yuqoridagi MENU va xabarda ogohlantirish.
+  let prices = null;
+  let unchecked = false;
+  if (db.usingPg) {
+    prices = await dbPrices(items.map((it) => clean(it && it.name)));
+    unchecked = !prices;
   }
 
   let total = 0;
@@ -133,7 +171,14 @@ exports.handler = async (event) => {
   for (const it of items) {
     const itemName = clean(it && it.name);
     const qty = Number(it && it.qty);
-    const price = MENU[itemName];
+    let price = MENU[itemName];
+    if (prices) {
+      const row = prices.get(itemName);
+      if (row && !row.mavjud) {
+        return reply(400, { ok: false, error: `«${itemName}» tugagan. Uni savatdan olib tashlang` });
+      }
+      price = row ? row.narx : undefined;
+    }
     if (!price || !Number.isInteger(qty) || qty < 1 || qty > LIMITS.qty) {
       return reply(400, { ok: false, error: "Savatda noto'g'ri taom bor" });
     }
@@ -149,10 +194,13 @@ exports.handler = async (event) => {
     taomlar,
     jami: total,
     rozilik: true,
+    stol,
   });
 
   const text = [
     '🍔 <b>Yangi buyurtma</b>',
+    ...(stol ? [`🪑 <b>Stol ${stol}</b>`] : []),
+    ...(unchecked ? ['⚠️ Narxlar tekshirilmadi (baza javob bermadi)'] : []),
     '',
     lines.join('\n'),
     '',

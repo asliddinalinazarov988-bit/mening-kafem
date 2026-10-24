@@ -10,7 +10,7 @@ Netlify'da sozlash: **Site configuration → Environment variables** bo'limiga q
 - `TELEGRAM_BOT_TOKEN` — @BotFather bergan bot tokeni
 - `TELEGRAM_CHAT_ID` — buyurtmalar keladigan chat yoki guruh ID si
 
-Har bir o'zgaruvchida **Scopes** ichida «Functions» belgilangan bo'lsin, **Deploy contexts** da esa «Production» bilan birga «Deploy Previews» ham yoqilgan bo'lsin (aks holda sinov versiyada «Buyurtma yuborilmadi» chiqadi). Keyin saytni qayta deploy qiling — o'zgaruvchilar faqat yangi deploydan keyin kuchga kiradi. Xato bo'lsa, qaysi o'zgaruvchi yetishmayotgani **Logs → Functions → order** da ko'rinadi. Menyuga taom qo'shsangiz yoki narxni o'zgartirsangiz, `index.html` bilan birga `netlify/functions/order.js` dagi `MENU` ro'yxatini ham yangilang.
+Har bir o'zgaruvchida **Scopes** ichida «Functions» belgilangan bo'lsin, **Deploy contexts** da esa «Production» bilan birga «Deploy Previews» ham yoqilgan bo'lsin (aks holda sinov versiyada «Buyurtma yuborilmadi» chiqadi). Keyin saytni qayta deploy qiling — o'zgaruvchilar faqat yangi deploydan keyin kuchga kiradi. Xato bo'lsa, qaysi o'zgaruvchi yetishmayotgani **Logs → Functions → order** da ko'rinadi. Hostingda menyu bazada saqlanadi va `/admin` orqali o'zgartiriladi (pastga qarang). Netlify'dagi (zaxira sayt) menyuni o'zgartirsangiz, `index.html` bilan birga `netlify/functions/order.js` dagi `MENU` ro'yxatini ham yangilang.
 
 ## Buyurtmalarni Supabase'ga saqlash
 
@@ -83,3 +83,18 @@ Zaxiradan tiklash:
 ```
 gunzip -c buyurtmalar-YYYY-MM-DD.sql.gz | psql -h localhost -U FOYDALANUVCHI BAZA
 ```
+
+## Admin sahifa va stol QR-kodlari (hostingda)
+
+Hostingda menyu PostgreSQL'dagi `menyu` jadvalida saqlanadi: jadval birinchi ulanishda o'zi yaratiladi va bo'sh bo'lsa `index.html` dagi taomlar bilan to'ldiriladi. Sayt menyuni `/.netlify/functions/menyu` dan oladi (60 soniyalik kesh), buyurtma narxi ham bazadan olinadi. Netlify'da (zaxira sayt) baza yo'q — u yerda `index.html` dagi menyu va `order.js` dagi `MENU` ishlaydi, `/admin` esa ochilmaydi.
+
+1. cPanel → **Setup Node.js App** → **Environment variables** ga qo'shing:
+   - `ADMIN_PAROL` — admin paroli, kamida 10 belgi (kodga yozmang). Bo'lmasa yoki qisqa bo'lsa, kirish yopiq bo'ladi.
+2. Shu sahifada **«Установить NPM пакеты»** (Run NPM Install) ni bosing — QR-kodlar uchun `qrcode` paketi o'rnatiladi. Keyin **Restart**.
+3. Brauzerda `https://DOMEN/admin` ni oching va parol bilan kiring (sessiya 30 kun saqlanadi, «Chiqish» tugmasi bor). Bitta IP'dan 15 daqiqada 5 tadan ko'p noto'g'ri parol kiritilsa — «Biroz kuting».
+   - Har bir taomda: narxni o'zgartirish, «Tugadi / Bor» (tugagan taom saytda kulrang, «Tugadi» yorlig'i bilan chiqadi va savatga qo'shilmaydi), tahrirlash (nomi, tavsif, toifa, narx matni, belgi), o'chirish.
+   - «Yangi taom» — nomi, tavsif, toifa, narx.
+   - Diqqat: barcha taomlar o'chirilsa, keyingi qayta ishga tushishda jadval yana `index.html` dagi menyu bilan to'ldiriladi.
+4. **Stol QR-kodlari**: admin sahifasida stollar sonini kiriting → chop etishga tayyor sahifa ochiladi (A4 ga 6 ta). Har bir QR `https://DOMEN/?stol=N` ni ochadi: savatda va buyurtma oynasida «🪑 Stol N» ko'rinadi, Telegram xabarida «🪑 Stol N» qatori chiqadi va stol raqami bazaga (`buyurtmalar.stol`) yoziladi.
+
+Baza javob bermasa, buyurtma baribir Telegram'ga yuboriladi (narx `order.js` dagi `MENU` dan), xabarda «⚠️ Narxlar tekshirilmadi (baza javob bermadi)» qatori bo'ladi.
