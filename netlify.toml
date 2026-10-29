@@ -1,3 +1,15 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+  # Ruscha sahifalar (ru/index.html, ru/privacy.html) i18n/ru.js lug'atidan yasaladi.
+  command = "node netlify/lib/i18n.js"
+
+[[redirects]]
+  from = "/ru"
+  to = "/ru/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/ru/privacy"
+  to = "/ru/privacy.html"
+  status = 200

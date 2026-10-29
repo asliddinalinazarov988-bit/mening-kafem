@@ -5,6 +5,7 @@
 // Jadval: supabase/buyurtmalar.sql (hostingda netlify/lib/db.js o'zi yaratadi)
 
 const db = require('../lib/db');
+const i18n = require('../lib/i18n');
 
 // Narxlar serverda saqlanadi — brauzerdan kelgan narxga ishonilmaydi.
 // Hostingda narx bazadagi "menyu" jadvalidan olinadi; bu ro'yxat Netlify'da va baza javob bermaganda ishlatiladi.
@@ -113,14 +114,19 @@ exports.handler = async (event) => {
     return reply(400, { ok: false, error: "So'rov noto'g'ri" });
   }
 
+  // Ruscha sahifadan kelgan buyurtma: javob xabarlari ruscha, Telegram'da «🌐 RU» qatori.
+  const til = data.til === 'ru' ? 'ru' : 'uz';
+  const fail = (statusCode, msg, vars, code) =>
+    reply(statusCode, { ok: false, error: i18n.serverMatn(til, msg, vars), ...(code ? { code } : {}) });
+
   // Spamdan himoya: yashirin maydon to'ldirilgan yoki forma juda tez yuborilgan
   if (data.website || !(Number(data.elapsed) >= MIN_FILL_MS)) {
-    return reply(400, { ok: false, error: "So'rov rad etildi" });
+    return fail(400, "So'rov rad etildi");
   }
 
   const ip = event.headers['x-nf-client-connection-ip'] || event.headers['x-forwarded-for'] || 'noma\'lum';
   if (rateLimited(ip)) {
-    return reply(429, { ok: false, error: "Juda ko'p so'rov. Birozdan keyin urinib ko'ring" });
+    return fail(429, "Juda ko'p so'rov. Birozdan keyin urinib ko'ring");
   }
 
   const name = clean(data.name);
@@ -129,17 +135,17 @@ exports.handler = async (event) => {
   const digits = phone.replace(/\D/g, '');
 
   if (name.length < 2 || name.length > LIMITS.name) {
-    return reply(400, { ok: false, error: 'Ismni to\'g\'ri kiriting' });
+    return fail(400, "Ismni to'g'ri kiriting");
   }
   if (phone.length > LIMITS.phone || !/^[+\d\s()-]+$/.test(phone) || digits.length < 9 || digits.length > 15) {
-    return reply(400, { ok: false, error: 'Telefon raqamini to\'g\'ri kiriting' });
+    return fail(400, "Telefon raqamini to'g'ri kiriting");
   }
   if (note.length < 3 || note.length > LIMITS.note) {
-    return reply(400, { ok: false, error: "Manzil yoki izoh 3 dan 300 belgigacha bo'lishi kerak" });
+    return fail(400, "Manzil yoki izoh 3 dan 300 belgigacha bo'lishi kerak");
   }
 
   if (data.consent !== true) {
-    return reply(400, { ok: false, error: "Ma'lumotlardan foydalanishga rozilik berilmagan" });
+    return fail(400, "Ma'lumotlardan foydalanishga rozilik berilmagan");
   }
 
   // Stol raqami ixtiyoriy (sahifa ?stol=N bilan ochilganda keladi): 1–99.
@@ -148,13 +154,13 @@ exports.handler = async (event) => {
     const s = String(data.stol).trim();
     stol = /^\d{1,2}$/.test(s) ? Number(s) : 0;
     if (stol < 1 || stol > 99) {
-      return reply(400, { ok: false, error: "Stol raqami noto'g'ri" });
+      return fail(400, "Stol raqami noto'g'ri");
     }
   }
 
   const items = Array.isArray(data.items) ? data.items : [];
   if (!items.length || items.length > LIMITS.items) {
-    return reply(400, { ok: false, error: "Savat bo'sh" });
+    return fail(400, "Savat bo'sh");
   }
 
   // Hostingda narxlar bazadan; baza javob bermasa — yuqoridagi MENU va xabarda ogohlantirish.
@@ -175,12 +181,13 @@ exports.handler = async (event) => {
     if (prices) {
       const row = prices.get(itemName);
       if (row && !row.mavjud) {
-        return reply(400, { ok: false, error: `«${itemName}» tugagan. Uni savatdan olib tashlang` });
+        const nomi = til === 'ru' && row.nomi_ru ? row.nomi_ru : itemName;
+        return fail(400, '«{nomi}» tugagan. Uni savatdan olib tashlang', { nomi });
       }
       price = row ? row.narx : undefined;
     }
     if (!price || !Number.isInteger(qty) || qty < 1 || qty > LIMITS.qty) {
-      return reply(400, { ok: false, error: "Savatda noto'g'ri taom bor" });
+      return fail(400, "Savatda noto'g'ri taom bor");
     }
     total += price * qty;
     taomlar.push({ nom: itemName, soni: qty, narx: price });
@@ -195,11 +202,13 @@ exports.handler = async (event) => {
     jami: total,
     rozilik: true,
     stol,
+    til,
   });
 
   const text = [
     '🍔 <b>Yangi buyurtma</b>',
     ...(stol ? [`🪑 <b>Stol ${stol}</b>`] : []),
+    ...(til === 'ru' ? ['🌐 RU'] : []),
     ...(unchecked ? ['⚠️ Narxlar tekshirilmadi (baza javob bermadi)'] : []),
     '',
     lines.join('\n'),
@@ -221,11 +230,11 @@ exports.handler = async (event) => {
     if (!res.ok || !out.ok) {
       console.error('Telegram xatosi:', res.status, out.description);
       // Telegram javobi (masalan, "chat not found") maxfiy emas — sababni topish uchun qaytariladi.
-      return reply(502, { ok: false, error: 'Buyurtma yuborilmadi', code: `TG_${res.status}: ${out.description || 'noma\'lum'}` });
+      return fail(502, 'Buyurtma yuborilmadi', null, `TG_${res.status}: ${out.description || 'noma\'lum'}`);
     }
   } catch (e) {
     console.error('Telegram bilan aloqa yo\'q:', e.message);
-    return reply(502, { ok: false, error: 'Buyurtma yuborilmadi', code: 'TG_NETWORK' });
+    return fail(502, 'Buyurtma yuborilmadi', null, 'TG_NETWORK');
   }
 
   return reply(200, { ok: true });

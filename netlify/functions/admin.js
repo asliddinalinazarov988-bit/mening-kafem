@@ -1,7 +1,7 @@
 // Admin sahifa: hostingda https://DOMEN/admin (yoki /.netlify/functions/admin).
 //  - faqat hostingda (PGDATABASE bor) ishlaydi, aks holda 404;
 //  - kirish ADMIN_PAROL muhit o'zgaruvchisi bilan (kamida 10 belgi), sessiya — imzolangan cookie (30 kun);
-//  - menyu: narx, «Tugadi / Bor», tahrirlash, o'chirish, yangi taom;
+//  - menyu: narx, «Tugadi / Bor», tahrirlash, o'chirish, yangi taom (ruscha nomi/tavsifi bilan — /ru sahifa uchun);
 //  - stol QR-kodlari: ?qr=N — chop etishga tayyor sahifa (A4 ga 6 tadan).
 // Barcha o'zgartirishlar POST va CSRF tokeni bilan. Parol va kalitlar sahifada ko'rsatilmaydi.
 
@@ -208,6 +208,7 @@ const CSS = `
   .item-head small,.muted{color:#aaa;font-size:13px}
   .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:20px;background:#d4af37;color:#0b0b0b;margin-left:6px;vertical-align:2px}
   .tag.off{background:#555;color:#eee}
+  .tag.ru{background:transparent;border:1px solid #e0a35a;color:#e0a35a;padding:1px 7px}
   .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
   .row form{display:flex;gap:8px;align-items:center;margin:0}
   label{display:block;font-size:13px;color:#aaa;margin:10px 0 4px}
@@ -245,7 +246,7 @@ function itemCard(t, csrf) {
   const hidden = `<input type="hidden" name="csrf" value="${esc(csrf)}"><input type="hidden" name="id" value="${t.id}">`;
   return `<div class="box item${t.mavjud ? '' : ' off'}">
   <div class="item-head">
-    <div><b>${esc(t.nomi)}</b>${t.belgi ? `<span class="tag">${esc(t.belgi)}</span>` : ''}${t.mavjud ? '' : '<span class="tag off">TUGADI</span>'}
+    <div><b>${esc(t.nomi)}</b>${t.belgi ? `<span class="tag">${esc(t.belgi)}</span>` : ''}${t.mavjud ? '' : '<span class="tag off">TUGADI</span>'}${t.nomi_ru ? '' : '<span class="tag ru">RU yo\'q</span>'}
       <div class="muted">${esc(t.tavsif)}</div></div>
     <small>${esc(t.narx_matn || som(t.narx))}</small>
   </div>
@@ -259,9 +260,12 @@ function itemCard(t, csrf) {
   <details><summary>Tahrirlash</summary>
     <form method="post">${hidden}<input type="hidden" name="amal" value="tahrir">
       <label>Nomi</label><input name="nomi" maxlength="${LIMITS.nomi}" value="${esc(t.nomi)}" required>
+      <label>Nomi (RU)</label><input name="nomi_ru" maxlength="${LIMITS.nomi}" value="${esc(t.nomi_ru || '')}" lang="ru">
       <label>Tavsif</label><input name="tavsif" maxlength="${LIMITS.tavsif}" value="${esc(t.tavsif)}">
+      <label>Tavsif (RU)</label><input name="tavsif_ru" maxlength="${LIMITS.tavsif}" value="${esc(t.tavsif_ru || '')}" lang="ru">
       <label>Toifa</label><select name="toifa">${toifaOptions(t.toifa)}</select>
       <label>Narx matni (ixtiyoriy, masalan «42–46 ming»)</label><input name="narx_matn" maxlength="${LIMITS.narx_matn}" value="${esc(t.narx_matn || '')}">
+      <label>Narx matni (RU, ixtiyoriy, masalan «42–46 тыс.»)</label><input name="narx_matn_ru" maxlength="${LIMITS.narx_matn}" value="${esc(t.narx_matn_ru || '')}" lang="ru">
       <label>Belgi (ixtiyoriy)</label><input name="belgi" list="belgilar" maxlength="${LIMITS.belgi}" value="${esc(t.belgi || '')}">
       <button class="gold wide" type="submit">Saqlash</button>
     </form>
@@ -298,7 +302,9 @@ ${sections}
 <form method="post" class="box">
   <input type="hidden" name="csrf" value="${esc(csrf)}"><input type="hidden" name="amal" value="yangi">
   <label for="yNomi">Nomi</label><input id="yNomi" name="nomi" maxlength="${LIMITS.nomi}" required>
+  <label for="yNomiRu">Nomi (RU)</label><input id="yNomiRu" name="nomi_ru" maxlength="${LIMITS.nomi}" lang="ru">
   <label for="yTavsif">Tavsif</label><input id="yTavsif" name="tavsif" maxlength="${LIMITS.tavsif}">
+  <label for="yTavsifRu">Tavsif (RU)</label><input id="yTavsifRu" name="tavsif_ru" maxlength="${LIMITS.tavsif}" lang="ru">
   <label for="yToifa">Toifa</label><select id="yToifa" name="toifa">${toifaOptions('burger')}</select>
   <label for="yNarx">Narx (so'm)</label><input id="yNarx" name="narx" type="number" inputmode="numeric" min="1" max="${LIMITS.narx}" step="1" required>
   <button class="gold wide" type="submit">Qo'shish</button>
@@ -355,20 +361,26 @@ function parseNarx(v) {
   return n >= 1 && n <= LIMITS.narx ? n : null;
 }
 
-// Xato bo'lsa { error }, aks holda tozalangan qiymatlar.
+// Xato bo'lsa { error }, aks holda tozalangan qiymatlar. Ruscha maydonlar bo'sh bo'lsa '' (null emas).
 function parseItem(f, full) {
   const t = {
     nomi: clean(f.get('nomi')),
     tavsif: clean(f.get('tavsif')),
     toifa: f.get('toifa') || '',
+    nomi_ru: clean(f.get('nomi_ru')),
+    tavsif_ru: clean(f.get('tavsif_ru')),
   };
   if (t.nomi.length < 1 || t.nomi.length > LIMITS.nomi) return { error: `Nomi 1 dan ${LIMITS.nomi} belgigacha bo'lsin` };
+  if (t.nomi_ru.length > LIMITS.nomi) return { error: `Nomi (RU) ${LIMITS.nomi} belgidan oshmasin` };
   if (t.tavsif.length > LIMITS.tavsif) return { error: `Tavsif ${LIMITS.tavsif} belgidan oshmasin` };
+  if (t.tavsif_ru.length > LIMITS.tavsif) return { error: `Tavsif (RU) ${LIMITS.tavsif} belgidan oshmasin` };
   if (!db.TOIFALAR.includes(t.toifa)) return { error: "Toifa noto'g'ri" };
   if (full) {
     t.narx_matn = clean(f.get('narx_matn')) || null;
+    t.narx_matn_ru = clean(f.get('narx_matn_ru'));
     t.belgi = clean(f.get('belgi')) || null;
     if (t.narx_matn && t.narx_matn.length > LIMITS.narx_matn) return { error: `Narx matni ${LIMITS.narx_matn} belgidan oshmasin` };
+    if (t.narx_matn_ru.length > LIMITS.narx_matn) return { error: `Narx matni (RU) ${LIMITS.narx_matn} belgidan oshmasin` };
     if (t.belgi && t.belgi.length > LIMITS.belgi) return { error: `Belgi ${LIMITS.belgi} belgidan oshmasin` };
   } else {
     t.narx = parseNarx(f.get('narx'));

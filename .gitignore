@@ -1,0 +1,3 @@
+node_modules/
+# Netlify build paytida yasaladigan ruscha sahifalar (node netlify/lib/i18n.js)
+/ru/
