@@ -6,6 +6,43 @@
 <title>American — Fast Food</title>
 <meta name="description" content="American Fast Food — oilaviy ovqatlanish uchun qulay, tinch va hamyonbop haqiqiy amerikancha ta'm.">
 <meta name="theme-color" content="#0b0b0b">
+<link rel="canonical" href="https://burgersmash.uz/">
+<link rel="alternate" hreflang="uz" href="https://burgersmash.uz/">
+<link rel="alternate" hreflang="ru" href="https://burgersmash.uz/ru">
+<link rel="alternate" hreflang="x-default" href="https://burgersmash.uz/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="American Fast Food">
+<meta property="og:title" content="American — Fast Food">
+<meta property="og:description" content="American Fast Food — oilaviy ovqatlanish uchun qulay, tinch va hamyonbop haqiqiy amerikancha ta'm.">
+<meta property="og:url" content="https://burgersmash.uz/">
+<meta property="og:locale" content="uz_UZ">
+<meta property="og:locale:alternate" content="ru_RU">
+<script>
+  // Til tugmasi bilan ruscha tanlangan bo'lsa, keyingi kirishlarda ruscha sahifa ochiladi (birinchi kirishda — yo'q)
+  (function(){
+    try {
+      if (document.documentElement.lang === 'uz' && localStorage.getItem('til') === 'ru'){
+        location.replace('/ru' + location.search + location.hash);
+      }
+    } catch (e) {}
+  })();
+</script>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+  (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+  m[i].l=1*new Date();
+  for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+  k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+  (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+  ym(113894435, "init", {
+    clickmap:true,
+    trackLinks:true,
+    accurateTrackBounce:true,
+    webvisor:true
+  });
+</script>
+<!-- /Yandex.Metrika counter -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0b0b'/%3E%3Cpath d='M14 30c0-14 36-14 36 0z' fill='%23d4af37'/%3E%3Crect x='12' y='34' width='40' height='6' rx='3' fill='%23d4af37'/%3E%3Cpath d='M14 44h36c0 6-4 8-8 8H22c-4 0-8-2-8-8z' fill='%23d4af37'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -56,6 +93,14 @@
     border-radius:40px;color:var(--gold);transition:.2s
   }
   .nav-call:hover{background:var(--gold);color:var(--black)}
+  .nav-right{display:flex;align-items:center;gap:12px}
+  .lang{
+    display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;letter-spacing:1px;
+    padding:8px 14px;border:1px solid var(--line);border-radius:40px
+  }
+  .lang a{color:var(--muted);transition:color .2s}
+  .lang a:hover,.lang a[aria-current]{color:var(--gold)}
+  .lang span{color:var(--line)}
 
   /* ---------- Buttons ---------- */
   .btn{
@@ -298,6 +343,7 @@
 </style>
 </head>
 <body>
+<noscript><div><img src="https://mc.yandex.ru/watch/113894435" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 
 <!-- Logotip (bir marta e'lon qilinadi, keyin <use> orqali qayta ishlatiladi) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -342,7 +388,12 @@
       <a href="#band-qilish">Joy band qilish</a>
       <a href="#aloqa">Aloqa</a>
     </nav>
-    <a href="tel:+998908220101" class="nav-call">+998 90 822 01 01</a>
+    <div class="nav-right">
+      <a href="tel:+998908220101" class="nav-call">+998 90 822 01 01</a>
+      <div class="lang" aria-label="Til">
+        <a href="/" hreflang="uz" lang="uz" data-til="uz" aria-current="page">UZ</a><span aria-hidden="true">|</span><a href="/ru" hreflang="ru" lang="ru" data-til="ru">RU</a>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -473,15 +524,15 @@
         <form id="orderForm" novalidate>
           <div class="field">
             <label for="oName">Ismingiz</label>
-            <input id="oName" name="name" type="text" placeholder="Masalan: Aziz" maxlength="60" autocomplete="name" required>
+            <input id="oName" name="name" type="text" placeholder="Masalan: Aziz" maxlength="60" autocomplete="name" class="ym-disable-keys" required>
           </div>
           <div class="field">
             <label for="oPhone">Telefon raqamingiz</label>
-            <input id="oPhone" name="phone" type="tel" placeholder="+998 __ ___ __ __" maxlength="20" autocomplete="tel" required>
+            <input id="oPhone" name="phone" type="tel" placeholder="+998 __ ___ __ __" maxlength="20" autocomplete="tel" class="ym-disable-keys" required>
           </div>
           <div class="field">
             <label for="oNote">Manzil yoki izoh</label>
-            <textarea id="oNote" name="note" rows="3" maxlength="300" placeholder="Masalan: Termiz, Al-Hakim at-Termiziy ko'chasi 12 yoki «Olib ketaman»" required></textarea>
+            <textarea id="oNote" name="note" class="ym-disable-keys" rows="3" maxlength="300" placeholder="Masalan: Termiz, Al-Hakim at-Termiziy ko'chasi 12 yoki «Olib ketaman»" required></textarea>
             <small id="oNoteCount">0 / 300</small>
           </div>
           <label class="consent" for="oConsent">
@@ -647,8 +698,69 @@
   <a href="#menyu" class="btn btn-outline">Menyuni ko'ring</a>
 </div>
 
+<!-- JavaScript matnlari. Ruscha sahifada bu blok i18n/ru.js dagi "js" bo'limi bilan almashtiriladi. -->
+<script type="application/json" id="matnlar">
+{
+  "som": "so'm",
+  "savatga": "Savatga",
+  "qoshildi": "Qo'shildi ✓",
+  "tugadi": "Tugadi",
+  "belgi": {},
+  "taomSoni": "{n} ta taom",
+  "stol": "🪑 Stol {n}",
+  "kamaytirish": "{nomi} sonini kamaytirish",
+  "oshirish": "{nomi} sonini oshirish",
+  "tgYopish": "Telegram oynasini yopish",
+  "xatoMaydon": "Iltimos, ism, telefon raqam va manzil yoki izohni to'g'ri kiriting.",
+  "xatoRozilik": "Buyurtma berish uchun ma'lumotlaringiz ishlatilishiga rozilik belgisini qo'ying.",
+  "xatoKutish": "Siz hozirgina buyurtma berdingiz. {s} soniyadan keyin qayta urinib ko'ring.",
+  "yuborilmadi": "Buyurtma yuborilmadi",
+  "xatoKodi": "xato kodi",
+  "yuborilmoqda": "Yuborilmoqda...",
+  "yuborish": "Yuborish",
+  "bandMatn": "{sana} kuni soat {vaqt} ga {mehmon} uchun so'rovingiz qabul qilindi. Band qilishni tasdiqlash uchun bizga qo'ng'iroq qiling."
+}
+</script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
+  // Til va matnlar: o'zbekcha sahifada — o'zbekcha, /ru da — ruscha (serverda almashtiriladi)
+  var LANG = document.documentElement.lang === 'ru' ? 'ru' : 'uz';
+  var T = JSON.parse(document.getElementById('matnlar').textContent);
+  function plural(n, forms){
+    var a = n % 10, b = n % 100;
+    return forms[a === 1 && b !== 11 ? 0 : a >= 2 && a <= 4 && (b < 10 || b >= 20) ? 1 : 2];
+  }
+  function t(key, vars){
+    var s = T[key];
+    if (Array.isArray(s)) s = plural(vars.n, s);
+    return String(s).replace(/\{(\w+)\}/g, function(all, k){ return vars && vars[k] != null ? vars[k] : all; });
+  }
+
+  // Yandex Metrika maqsadi (Metrika yuklanmagan bo'lsa ham buyurtma ishlayveradi)
+  var YM_ID = 113894435;
+  function ymGoal(name, params){
+    try { if (typeof window.ym === 'function') window.ym(YM_ID, 'reachGoal', name, params); } catch (e) {}
+  }
+
+  // Til tugmasi: boshqa tildagi sahifaga o'tadi, ?stol=N va joriy bo'lim saqlanadi, tanlov eslab qolinadi
+  function currentSection(){
+    var id = '';
+    ['menyu', 'savat', 'qulayliklar', 'band-qilish', 'aloqa'].forEach(function(s){
+      var el = document.getElementById(s);
+      if (el && el.getBoundingClientRect().top <= 120) id = s;
+    });
+    return id ? '#' + id : '';
+  }
+  document.querySelectorAll('[data-til]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      var til = a.dataset.til;
+      try { localStorage.setItem('til', til); } catch (err) {}
+      if (til === LANG){ e.preventDefault(); return; }
+      e.preventDefault();
+      location.href = (til === 'ru' ? '/ru' : '/') + location.search + (currentSection() || location.hash);
+    });
+  });
+
   // Telegram Mini App: sayt Telegram ichida ochilganda ishlaydi, oddiy brauzerda tg = null
   var tg = window.Telegram && Telegram.WebApp && Telegram.WebApp.initData ? Telegram.WebApp : null;
   if (tg){ tg.ready(); tg.expand(); }
@@ -661,7 +773,7 @@
   function tgCloseButton(show){
     if (!tg || !tg.MainButton) return;
     if (show){
-      tg.MainButton.setParams({ text: 'Telegram oynasini yopish', color: '#d4af37', text_color: '#0b0b0b', is_visible: true });
+      tg.MainButton.setParams({ text: t('tgYopish'), color: '#d4af37', text_color: '#0b0b0b', is_visible: true });
     } else {
       tg.MainButton.hide();
     }
@@ -675,7 +787,7 @@
     return n >= 1 && n <= 99 ? n : null;
   })();
   if (stol){
-    document.querySelectorAll('[data-stol]').forEach(function(el){ el.textContent = '🪑 Stol ' + stol; el.hidden = false; });
+    document.querySelectorAll('[data-stol]').forEach(function(el){ el.textContent = t('stol', { n: stol }); el.hidden = false; });
   }
 
   // Menyu bo'limlari
@@ -695,12 +807,33 @@
     });
   });
 
-  // Savat
+  // Savat. Taom serverga va savatga o'zbekcha nomi (data-name) bilan yoziladi, ko'rsatishda — sahifa tilidagi nomi.
+  // Savat brauzer oynasida saqlanadi — til almashganda yo'qolmaydi.
   var cart = []; // {name, price, qty}
-  function som(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + " so'm"; }
+  try {
+    var saved = JSON.parse(sessionStorage.getItem('savat') || '[]');
+    if (Array.isArray(saved)) cart = saved.filter(function(c){
+      return c && typeof c.name === 'string' && Number.isInteger(c.price) && Number.isInteger(c.qty) && c.qty > 0;
+    });
+  } catch (e) {}
+  function saveCart(){
+    try { sessionStorage.setItem('savat', JSON.stringify(cart)); } catch (e) {}
+  }
+  function som(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ' + T.som; }
   function findItem(name){
     for (var i = 0; i < cart.length; i++){ if (cart[i].name === name) return cart[i]; }
     return null;
+  }
+  function menuItem(name){
+    var items = menuList.querySelectorAll('.item');
+    for (var i = 0; i < items.length; i++){ if (items[i].dataset.name === name) return items[i]; }
+    return null;
+  }
+  function label(name){
+    var it = menuItem(name);
+    var b = it && it.querySelector('.item-name b');
+    var txt = b && b.firstChild && b.firstChild.nodeValue;
+    return txt && txt.trim() ? txt.trim() : name;
   }
   function cartTotal(){ return cart.reduce(function(s, c){ return s + c.price * c.qty; }, 0); }
   function cartQty(){ return cart.reduce(function(s, c){ return s + c.qty; }, 0); }
@@ -709,17 +842,18 @@
     var box = document.getElementById('cartItems');
     box.innerHTML = '';
     cart.forEach(function(c){
+      var nomi = label(c.name);
       var row = document.createElement('div'); row.className = 'cart-row';
       var nm = document.createElement('div'); nm.className = 'nm';
-      var b = document.createElement('b'); b.textContent = c.name;
+      var b = document.createElement('b'); b.textContent = nomi;
       var sp = document.createElement('span'); sp.textContent = som(c.price);
       nm.appendChild(b); nm.appendChild(sp);
       var q = document.createElement('div'); q.className = 'qty';
       var minus = document.createElement('button'); minus.type = 'button'; minus.textContent = '−';
-      minus.setAttribute('aria-label', c.name + ' sonini kamaytirish');
+      minus.setAttribute('aria-label', t('kamaytirish', { nomi: nomi }));
       var out = document.createElement('output'); out.textContent = c.qty;
       var plus = document.createElement('button'); plus.type = 'button'; plus.textContent = '+';
-      plus.setAttribute('aria-label', c.name + ' sonini oshirish');
+      plus.setAttribute('aria-label', t('oshirish', { nomi: nomi }));
       minus.addEventListener('click', function(){ changeQty(c.name, -1); });
       plus.addEventListener('click', function(){ changeQty(c.name, 1); });
       q.appendChild(minus); q.appendChild(out); q.appendChild(plus);
@@ -728,10 +862,11 @@
       box.appendChild(row);
     });
     var n = cartQty();
-    document.getElementById('cartCount').textContent = n + ' ta taom';
+    document.getElementById('cartCount').textContent = t('taomSoni', { n: n });
     document.getElementById('cartTotal').textContent = som(cartTotal());
     document.getElementById('cartEmpty').style.display = cart.length ? 'none' : '';
     document.getElementById('orderBtn').disabled = !cart.length;
+    saveCart();
   }
 
   function changeQty(name, d){
@@ -751,13 +886,15 @@
     else cart.push({ name: it.dataset.name, price: Number(it.dataset.price), qty: 1 });
     renderCart();
     showCart();
-    btn.textContent = "Qo'shildi ✓"; btn.classList.add('added');
+    btn.textContent = t('qoshildi'); btn.classList.add('added');
     clearTimeout(btn._timer);
-    btn._timer = setTimeout(function(){ btn.textContent = 'Savatga'; btn.classList.remove('added'); }, 1200);
+    btn._timer = setTimeout(function(){ btn.textContent = t('savatga'); btn.classList.remove('added'); }, 1200);
   });
 
   // Menyuni bazadan olish (hostingda). Olib bo'lmasa sahifadagi yozilgan menyu qoladi.
+  // Ruscha sahifada ruscha maydon bo'sh bo'lmasa — ruschasi, bo'sh bo'lsa — o'zbekchasi.
   var CAT = { burger: 'burgerlar', lavash: 'lavash', extra: 'boshqa', drink: 'ichimliklar' };
+  function tr(tm, field){ return LANG === 'ru' && tm[field + '_ru'] ? tm[field + '_ru'] : tm[field]; }
   function renderMenu(list){
     // Ikonkalar: shu nomli taomniki, bo'lmasa shu toifadagi birinchi taomniki
     var icons = {}, catIcons = {};
@@ -767,26 +904,27 @@
       if (!catIcons[it.dataset.cat]) catIcons[it.dataset.cat] = ico.innerHTML;
     });
     var frag = document.createDocumentFragment();
-    list.forEach(function(t){
-      var cat = CAT[t.toifa] || 'boshqa';
+    list.forEach(function(tm){
+      var cat = CAT[tm.toifa] || 'boshqa';
       var it = document.createElement('div');
-      it.className = 'item reveal' + (t.belgi ? ' hot' : '') + (t.mavjud === false ? ' sold' : '');
-      it.dataset.cat = cat; it.dataset.name = t.nomi; it.dataset.price = t.narx;
+      it.className = 'item reveal' + (tm.belgi ? ' hot' : '') + (tm.mavjud === false ? ' sold' : '');
+      it.dataset.cat = cat; it.dataset.name = tm.nomi; it.dataset.price = tm.narx;
       var ico = document.createElement('div'); ico.className = 'item-ico';
-      ico.innerHTML = icons[t.nomi] || catIcons[cat] || catIcons.boshqa || '';
+      ico.innerHTML = icons[tm.nomi] || catIcons[cat] || catIcons.boshqa || '';
       var nm = document.createElement('div'); nm.className = 'item-name';
-      var b = document.createElement('b'); b.textContent = t.nomi;
-      if (t.belgi){
-        var tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = String(t.belgi).toUpperCase();
+      var b = document.createElement('b'); b.textContent = tr(tm, 'nomi');
+      if (tm.belgi){
+        var belgi = String(tm.belgi).toUpperCase();
+        var tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = T.belgi[belgi] || belgi;
         b.appendChild(document.createTextNode(' ')); b.appendChild(tag);
       }
-      var sp = document.createElement('span'); sp.textContent = t.tavsif || '';
+      var sp = document.createElement('span'); sp.textContent = tr(tm, 'tavsif') || '';
       nm.appendChild(b); nm.appendChild(sp);
       var buy = document.createElement('div'); buy.className = 'item-buy';
-      var pr = document.createElement('div'); pr.className = 'price'; pr.textContent = t.narx_matn || som(t.narx);
+      var pr = document.createElement('div'); pr.className = 'price'; pr.textContent = tr(tm, 'narx_matn') || som(tm.narx);
       var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'add-btn';
-      if (t.mavjud === false){ btn.disabled = true; btn.textContent = 'Tugadi'; }
-      else btn.textContent = 'Savatga';
+      if (tm.mavjud === false){ btn.disabled = true; btn.textContent = T.tugadi; }
+      else btn.textContent = T.savatga;
       buy.appendChild(pr); buy.appendChild(btn);
       it.appendChild(ico); it.appendChild(nm); it.appendChild(buy);
       frag.appendChild(it);
@@ -797,12 +935,20 @@
     menuList.querySelectorAll('.reveal').forEach(function(el){
       if (window.revealObserver) revealObserver.observe(el); else el.classList.add('in');
     });
+    // Savatdagi narxlar bazadagi narx bilan yangilanadi, nomlar sahifa tilida ko'rsatiladi
+    cart.forEach(function(c){
+      var it = menuItem(c.name);
+      if (it) c.price = Number(it.dataset.price);
+    });
+    renderCart();
   }
+  function optStr(v){ return v == null || typeof v === 'string'; }
   fetch('/.netlify/functions/menyu')
     .then(function(res){ return res.ok ? res.json() : null; })
     .then(function(data){
       var list = data && data.ok && Array.isArray(data.taomlar) ? data.taomlar.filter(function(t){
-        return t && typeof t.nomi === 'string' && Number.isInteger(t.narx);
+        return t && typeof t.nomi === 'string' && Number.isInteger(t.narx) &&
+          optStr(t.nomi_ru) && optStr(t.tavsif_ru) && optStr(t.narx_matn_ru);
       }) : [];
       if (list.length) renderMenu(list);
     })
@@ -821,7 +967,7 @@
     cart.forEach(function(c){
       var row = document.createElement('div'); row.className = 'cart-row';
       var nm = document.createElement('div'); nm.className = 'nm';
-      var b = document.createElement('b'); b.textContent = c.name;
+      var b = document.createElement('b'); b.textContent = label(c.name);
       var sp = document.createElement('span'); sp.textContent = c.qty + ' × ' + som(c.price);
       nm.appendChild(b); nm.appendChild(sp);
       var sum = document.createElement('div'); sum.className = 'sum'; sum.textContent = som(c.price * c.qty);
@@ -880,22 +1026,23 @@
     ok = mark(oPhone, !/^[+\d\s()-]+$/.test(phone) || digits.length < 9 || digits.length > 15) && ok;
     ok = mark(oNote, note.length < 3 || note.length > 300) && ok;
     if (!ok){
-      orderError("Iltimos, ism, telefon raqam va manzil yoki izohni to'g'ri kiriting.");
+      orderError(t('xatoMaydon'));
       return;
     }
     if (!document.getElementById('oConsent').checked){
-      orderError("Buyurtma berish uchun ma'lumotlaringiz ishlatilishiga rozilik belgisini qo'ying.");
+      orderError(t('xatoRozilik'));
       return;
     }
 
     var wait = COOLDOWN_MS - (Date.now() - lastSent());
     if (wait > 0){
-      orderError('Siz hozirgina buyurtma berdingiz. ' + Math.ceil(wait / 1000) + ' soniyadan keyin qayta urinib ko\'ring.');
+      orderError(t('xatoKutish', { s: Math.ceil(wait / 1000) }));
       return;
     }
 
+    var jami = cartTotal();
     sendBtn.disabled = true;
-    sendBtn.textContent = 'Yuborilmoqda...';
+    sendBtn.textContent = t('yuborilmoqda');
     fetch('/.netlify/functions/order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -905,6 +1052,7 @@
         note: note,
         items: cart.map(function(c){ return { name: c.name, qty: c.qty }; }),
         stol: stol,
+        til: LANG,
         consent: document.getElementById('oConsent').checked,
         website: document.getElementById('oWebsite').value,
         elapsed: Date.now() - orderOpenedAt
@@ -913,7 +1061,7 @@
       .then(function(res){
         return res.json().catch(function(){ return {}; }).then(function(data){
           if (!res.ok || !data.ok){
-            var err = new Error(data.error || 'Buyurtma yuborilmadi');
+            var err = new Error(data.error || t('yuborilmadi'));
             err.code = data.code || ('HTTP_' + res.status);
             throw err;
           }
@@ -921,6 +1069,7 @@
       })
       .then(function(){
         try { localStorage.setItem('lastOrderAt', String(Date.now())); } catch (e) {}
+        ymGoal('buyurtma', { order_price: jami, currency: 'UZS' });
         cart = [];
         renderCart();
         orderForm.reset();
@@ -931,12 +1080,12 @@
         tgCloseButton(true);
       })
       .catch(function(err){
-        var msg = err && err.code ? err.message : 'Buyurtma yuborilmadi';
-        orderError(msg + (err && err.code ? ' (xato kodi: ' + err.code + ')' : '') + '.', true);
+        var msg = err && err.code ? err.message : t('yuborilmadi');
+        orderError(msg + (err && err.code ? ' (' + t('xatoKodi') + ': ' + err.code + ')' : '') + '.', true);
       })
       .then(function(){
         sendBtn.disabled = false;
-        sendBtn.textContent = 'Yuborish';
+        sendBtn.textContent = t('yuborish');
       });
   });
 
@@ -971,8 +1120,7 @@
     var dt = dateInp.value.split('-').reverse().join('.');
     document.getElementById('sName').textContent = name.value.trim();
     document.getElementById('sText').textContent =
-      dt + ' kuni soat ' + timeSel.value + ' ga ' + document.getElementById('guests').value +
-      ' uchun so\'rovingiz qabul qilindi. Band qilishni tasdiqlash uchun bizga qo\'ng\'iroq qiling.';
+      t('bandMatn', { sana: dt, vaqt: timeSel.value, mehmon: document.getElementById('guests').value });
     document.getElementById('formFields').style.display = 'none';
     document.getElementById('success').classList.add('show');
   });

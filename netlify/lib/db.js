@@ -5,6 +5,8 @@
 //  - Aks holda (masalan, Netlify'da): Supabase REST — SUPABASE_URL, SUPABASE_SECRET_KEY.
 // Fayl netlify/functions ichida emas — aks holda Netlify uni alohida funksiya qilib qo'yadi.
 
+const i18n = require('./i18n');
+
 const PAGE = 1000; // Supabase bir so'rovda ko'pi bilan shuncha qator beradi
 
 let pg = null;
@@ -35,6 +37,8 @@ create table if not exists buyurtmalar (
 
 // Eski jadvalga stol raqami ustuni (bo'lsa hech narsa qilmaydi).
 const ADD_STOL = 'alter table buyurtmalar add column if not exists stol smallint';
+// Buyurtma qaysi tildagi sahifadan kelgani: 'uz' yoki 'ru'.
+const ADD_TIL = 'alter table buyurtmalar add column if not exists til text';
 
 const CREATE_MENU = `
 create table if not exists menyu (
@@ -49,6 +53,14 @@ create table if not exists menyu (
   tartib      integer not null default 0,
   yangilangan timestamptz not null default now()
 )`;
+
+// Ruscha maydonlar. nomi_ru null — hali to'ldirilmagan (fillMenuRu bir marta to'ldiradi);
+// keyin ularni faqat admin o'zgartiradi (bo'sh bo'lsa '' yoziladi).
+const ADD_MENU_RU = `
+alter table menyu
+  add column if not exists nomi_ru text,
+  add column if not exists tavsif_ru text,
+  add column if not exists narx_matn_ru text`;
 
 const TOIFALAR = ['burger', 'lavash', 'extra', 'drink'];
 
@@ -86,6 +98,18 @@ async function seedMenu(p) {
   );
 }
 
+// Ruscha nomi hali yo'q (null) taomlarni i18n/ru.js lug'ati bo'yicha bir marta to'ldiradi.
+// Lug'atda yo'q taomga '' yoziladi — admin panelda «RU yo'q» bilan ko'rinadi.
+async function fillMenuRu(p) {
+  const { rows } = await p.query('select id, nomi, tavsif, narx_matn from menyu where nomi_ru is null');
+  for (const r of rows) {
+    await p.query(
+      'update menyu set nomi_ru = $2, tavsif_ru = $3, narx_matn_ru = $4 where id = $1 and nomi_ru is null',
+      [r.id, i18n.taomRu(r.nomi), i18n.taomRu(r.tavsif), i18n.narxMatnRu(r.narx_matn)]
+    );
+  }
+}
+
 let pool = null;
 let ready = null;
 
@@ -99,8 +123,11 @@ function getPool() {
     ready = (async () => {
       await pool.query(CREATE_TABLE);
       await pool.query(ADD_STOL);
+      await pool.query(ADD_TIL);
       await pool.query(CREATE_MENU);
+      await pool.query(ADD_MENU_RU);
       await seedMenu(pool);
+      await fillMenuRu(pool);
     })().catch((e) => {
       ready = null; // keyingi so'rovda qayta uriniladi
       throw e;
@@ -156,17 +183,17 @@ async function supabaseSelectAll(queryString) {
 
 // --- Umumiy funksiyalar ---
 
-// row: { ism, telefon, izoh, taomlar, jami, rozilik, stol? }. Xato bo'lsa istisno tashlaydi.
+// row: { ism, telefon, izoh, taomlar, jami, rozilik, stol?, til? }. Xato bo'lsa istisno tashlaydi.
 async function saveOrder(row) {
   if (usingPg) {
     await query(
-      'insert into buyurtmalar (ism, telefon, izoh, taomlar, jami, rozilik, stol) values ($1, $2, $3, $4::jsonb, $5, $6, $7)',
-      [row.ism, row.telefon, row.izoh, JSON.stringify(row.taomlar), row.jami, row.rozilik === true, row.stol || null]
+      'insert into buyurtmalar (ism, telefon, izoh, taomlar, jami, rozilik, stol, til) values ($1, $2, $3, $4::jsonb, $5, $6, $7, $8)',
+      [row.ism, row.telefon, row.izoh, JSON.stringify(row.taomlar), row.jami, row.rozilik === true, row.stol || null, row.til || 'uz']
     );
     return;
   }
-  // Supabase jadvalida "stol" ustuni yo'q — u yerga yozilmaydi (Telegram xabarida baribir bor).
-  const { stol, ...rest } = row;
+  // Supabase jadvalida "stol" va "til" ustunlari yo'q — u yerga yozilmaydi (Telegram xabarida baribir bor).
+  const { stol, til, ...rest } = row;
   const { url, headers } = supabaseConfig();
   const res = await fetch(`${url}/rest/v1/buyurtmalar`, {
     method: 'POST',
@@ -226,7 +253,7 @@ async function countOrders() {
 
 // --- Menyu (faqat PostgreSQL) ---
 
-const MENU_COLS = 'id, nomi, tavsif, toifa, narx, narx_matn, belgi, mavjud, tartib';
+const MENU_COLS = 'id, nomi, tavsif, toifa, narx, narx_matn, belgi, mavjud, tartib, nomi_ru, tavsif_ru, narx_matn_ru';
 const MENU_CACHE_MS = 60000;
 let menuCache = null; // { at, rows }
 
@@ -243,27 +270,29 @@ function menuChanged() {
   menuCache = null;
 }
 
-// Nomlar bo'yicha narx va mavjudlik: Map(nomi -> { narx, mavjud }). Kesh ishlatilmaydi.
+// Nomlar bo'yicha narx va mavjudlik: Map(nomi -> { narx, mavjud, nomi_ru }). Kesh ishlatilmaydi.
 async function menuPrices(names) {
-  const { rows } = await query('select nomi, narx, mavjud from menyu where nomi = any($1::text[])', [names]);
-  return new Map(rows.map((r) => [r.nomi, { narx: r.narx, mavjud: r.mavjud }]));
+  const { rows } = await query('select nomi, narx, mavjud, nomi_ru from menyu where nomi = any($1::text[])', [names]);
+  return new Map(rows.map((r) => [r.nomi, { narx: r.narx, mavjud: r.mavjud, nomi_ru: r.nomi_ru || '' }]));
 }
 
+// t: { nomi, tavsif, toifa, narx, nomi_ru, tavsif_ru }.
 async function menuAdd(t) {
   await query(
-    `insert into menyu (nomi, tavsif, toifa, narx, tartib)
-     values ($1, $2, $3, $4, (select coalesce(max(tartib), 0) + 10 from menyu))`,
-    [t.nomi, t.tavsif, t.toifa, t.narx]
+    `insert into menyu (nomi, tavsif, toifa, narx, nomi_ru, tavsif_ru, narx_matn_ru, tartib)
+     values ($1, $2, $3, $4, $5, $6, '', (select coalesce(max(tartib), 0) + 10 from menyu))`,
+    [t.nomi, t.tavsif, t.toifa, t.narx, t.nomi_ru, t.tavsif_ru]
   );
   menuChanged();
 }
 
-// t: { nomi, tavsif, toifa, narx_matn, belgi }. Qator topilmasa false.
+// t: { nomi, tavsif, toifa, narx_matn, belgi, nomi_ru, tavsif_ru, narx_matn_ru }. Qator topilmasa false.
 async function menuEdit(id, t) {
   const { rowCount } = await query(
-    `update menyu set nomi = $2, tavsif = $3, toifa = $4, narx_matn = $5, belgi = $6, yangilangan = now()
+    `update menyu set nomi = $2, tavsif = $3, toifa = $4, narx_matn = $5, belgi = $6,
+       nomi_ru = $7, tavsif_ru = $8, narx_matn_ru = $9, yangilangan = now()
      where id = $1`,
-    [id, t.nomi, t.tavsif, t.toifa, t.narx_matn, t.belgi]
+    [id, t.nomi, t.tavsif, t.toifa, t.narx_matn, t.belgi, t.nomi_ru, t.tavsif_ru, t.narx_matn_ru]
   );
   menuChanged();
   return rowCount > 0;

@@ -2,7 +2,8 @@
 // (baza uchun "pg" paketi netlify/lib/db.js da ishlatiladi).
 //  - statik fayllar: / -> index.html, privacy.html va boshqalar;
 //  - /.netlify/functions/<nom> -> netlify/functions/<nom>.js dagi exports.handler (Netlify formatida);
-//  - /admin -> netlify/functions/admin.js (admin sahifa).
+//  - /admin -> netlify/functions/admin.js (admin sahifa);
+//  - /ru, /ru/privacy -> ruscha sahifalar (netlify/lib/i18n.js, tarjimalar i18n/ru.js da).
 // Netlify'da bu fayl ishlatilmaydi — u yerda funksiyalar avvalgidek ishlaydi.
 // Port: process.env.PORT (Passenger beradi), bo'lmasa 3000.
 
@@ -16,7 +17,7 @@ const FUNCTIONS = new Set(['order', 'telegram', 'telegram-setup', 'kochirish', '
 const MAX_BODY = 1024 * 1024; // 1 MB
 
 // Hech qachon berilmaydigan papka va fayllar.
-const HIDDEN_DIRS = new Set(['netlify', 'supabase', 'node_modules', 'tmp']);
+const HIDDEN_DIRS = new Set(['netlify', 'supabase', 'node_modules', 'tmp', 'i18n', 'ru']);
 const HIDDEN_FILES = new Set(['server.js', 'package.json', 'package-lock.json', 'netlify.toml']);
 
 const TYPES = {
@@ -113,6 +114,38 @@ async function runFunction(name, req, res, url) {
   res.end(req.method === 'HEAD' ? undefined : out);
 }
 
+// Ruscha sahifalar: manzil -> sahifa nomi (netlify/lib/i18n.js).
+const RU_PAGES = {
+  '/ru': 'index',
+  '/ru/': 'index',
+  '/ru/index.html': 'index',
+  '/ru/privacy': 'privacy',
+  '/ru/privacy/': 'privacy',
+  '/ru/privacy.html': 'privacy',
+};
+
+function serveRu(req, res, page) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    send(res, 405, 'Method Not Allowed', { Allow: 'GET, HEAD' });
+    return;
+  }
+  let body;
+  try {
+    body = Buffer.from(require('./netlify/lib/i18n').render(page), 'utf8');
+  } catch (err) {
+    console.error('[ru]', err);
+    send(res, 500, 'Internal Server Error');
+    return;
+  }
+  res.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Length': body.length,
+    'Cache-Control': 'no-cache',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  res.end(req.method === 'HEAD' ? undefined : body);
+}
+
 function serveStatic(req, res, url) {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     send(res, 405, 'Method Not Allowed', { Allow: 'GET, HEAD' });
@@ -191,6 +224,11 @@ const server = http.createServer((req, res) => {
   }
   if (url.pathname.startsWith('/.netlify/')) {
     send(res, 404, 'Not Found');
+    return;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(RU_PAGES, url.pathname)) {
+    serveRu(req, res, RU_PAGES[url.pathname]);
     return;
   }
 

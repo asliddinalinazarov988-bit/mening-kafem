@@ -1,6 +1,7 @@
 // Sayt menyusini JSON qilib beradi: GET /.netlify/functions/menyu
 //  - faqat hostingda (PGDATABASE bor) ishlaydi, aks holda 404 — sayt index.html dagi menyuni ko'rsatadi;
-//  - 60 soniyalik kesh (serverda va brauzerda).
+//  - 60 soniyalik kesh (serverda va brauzerda);
+//  - ruscha maydonlar (nomi_ru, tavsif_ru, narx_matn_ru) bo'sh bo'lsa null — /ru sahifa o'zbekchasini ko'rsatadi.
 
 const db = require('../lib/db');
 
@@ -30,6 +31,9 @@ exports.handler = async (event) => {
       narx_matn: r.narx_matn || null,
       belgi: r.belgi || null,
       mavjud: r.mavjud,
+      nomi_ru: r.nomi_ru || null,
+      tavsif_ru: r.tavsif_ru || null,
+      narx_matn_ru: r.narx_matn_ru || null,
     }));
     return reply(200, { ok: true, taomlar }, true);
   } catch (e) {
