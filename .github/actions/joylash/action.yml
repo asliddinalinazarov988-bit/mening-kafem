@@ -1,0 +1,61 @@
+name: Hostingga joylash
+description: Fayllarni FTPS orqali americantermiz-app ga yuklaydi va tmp/restart.txt orqali ilovani qayta ishga tushiradi.
+
+inputs:
+  dir:
+    description: Yuklanadigan papka (oxirida / bilan)
+    required: false
+    default: ./
+  server:
+    required: true
+  username:
+    required: true
+  password:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # Passenger tmp/restart.txt o'zgarganda ilovani qayta ishga tushiradi.
+    - name: tmp/restart.txt yaratish
+      shell: bash
+      env:
+        DIR: ${{ inputs.dir }}
+      run: |
+        mkdir -p "${DIR}tmp"
+        date -u +"%Y-%m-%dT%H:%M:%SZ $(git -C "$DIR" rev-parse HEAD)" > "${DIR}tmp/restart.txt"
+
+    # server-dir — cPanel hisobining uy papkasiga nisbatan ilova papkasi
+    # (FTP_USERNAME sifatida cPanel loginining o'zi ishlatiladi).
+    - name: Fayllarni yuklash (FTPS)
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ inputs.server }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+        port: 21
+        protocol: ftps
+        security: strict
+        local-dir: ${{ inputs.dir }}
+        server-dir: americantermiz-app/
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/node_modules/**
+          .htaccess
+          **/.htaccess
+          .well-known/**
+          **/*.log
+          tmp/**
+
+    - name: Ilovani qayta ishga tushirish (tmp/restart.txt)
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ inputs.server }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+        port: 21
+        protocol: ftps
+        security: strict
+        local-dir: ${{ inputs.dir }}tmp/
+        server-dir: americantermiz-app/tmp/

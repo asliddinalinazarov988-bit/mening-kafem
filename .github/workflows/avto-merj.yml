@@ -1,0 +1,106 @@
+name: Avtomatik Merj
+
+# PR main'ga ochilganda yoki yangilanganda. Faqat shunday PR o'zi Merj bo'ladi:
+#  shoxcha claude/ bilan boshlanadi, PR'ni repozitoriy egasi ochgan, qoralama emas, .github/ o'zgarmagan.
+# Testlar o'tsa — squash Merj va «Hostingga yuklash» ishga tushiriladi (GITHUB_TOKEN bilan qilingan
+# Merj push hodisasini bermaydi, shuning uchun joylash workflow_dispatch orqali chaqiriladi).
+# pull_request_target: qoidalar main'dagi shu fayldan olinadi — PR ularni o'zi o'zgartira olmaydi.
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions: {}
+
+concurrency:
+  group: avto-merj-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  shartlar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write # .github/ izohi uchun
+    outputs:
+      ok: ${{ steps.s.outputs.ok }}
+    steps:
+      - id: s
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          sabablar=()
+          [[ "$HEAD_REF" == claude/* ]] || sabablar+=("shoxcha nomi claude/ bilan boshlanmaydi")
+          [ "$HEAD_REPO" = "$REPO" ] || sabablar+=("PR boshqa repozitoriydan (fork)")
+          [ "$AUTHOR" = "$OWNER" ] || sabablar+=("PR'ni repozitoriy egasi ochmagan")
+          [ "$DRAFT" = "false" ] || sabablar+=("PR qoralama (draft)")
+
+          fayllar=$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)')
+          if grep -q '^\.github/' <<< "$fayllar"; then
+            sabablar+=(".github/ papkasi o'zgargan")
+            belgi='<!-- avto-merj:github -->'
+            if ! gh api --paginate "repos/$REPO/issues/$PR/comments" --jq '.[].body' | grep -qF "$belgi"; then
+              gh pr comment "$PR" --repo "$REPO" --body "Bu PR'ni egasi o'zi Merj qiladi: u \`.github/\` papkasidagi fayllarni o'zgartiradi, shuning uchun avtomatik Merj qilinmaydi.
+
+          $belgi"
+            fi
+          fi
+
+          if [ ${#sabablar[@]} -eq 0 ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+            echo "✅ PR avtomatik Merj shartlariga mos — testlar o'tsa Merj qilinadi" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            { echo "ℹ️ Avtomatik Merj qilinmaydi:"; printf -- '- %s\n' "${sabablar[@]}"; } >> "$GITHUB_STEP_SUMMARY"
+            printf 'Avtomatik Merj qilinmaydi: %s\n' "${sabablar[@]}"
+          fi
+
+  test:
+    needs: shartlar
+    if: needs.shartlar.outputs.ok == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/tekshiruv.yml
+    with:
+      ref: ${{ github.event.pull_request.head.sha }}
+
+  merj:
+    needs: [shartlar, test]
+    if: needs.shartlar.outputs.ok == 'true' && needs.test.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write # «Hostingga yuklash» ni ishga tushirish
+    steps:
+      # sha — testdan o'tgan commit; shundan keyin yangi push bo'lgan bo'lsa, Merj qilinmaydi.
+      - name: Squash Merj
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          gh api -X PUT "repos/$REPO/pulls/$PR/merge" \
+            -f merge_method=squash -f sha="$SHA" -f commit_title="$TITLE (#$PR)" --jq '.message'
+
+      - name: Hostingga yuklashni ishga tushirish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          TITLE: ${{ github.event.pull_request.title }}
+          URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh workflow run deploy-hosting.yml --repo "$REPO" --ref main \
+            -f ozgarish="$TITLE (#$PR)" -f havola="$URL"
