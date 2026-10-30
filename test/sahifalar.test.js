@@ -118,6 +118,18 @@ test('/admin — kirish sahifasi (Metrikasiz)', async () => {
   assert.ok(!r.text.includes(METRIKA), 'admin sahifada Metrika bo\'lmasligi kerak');
 });
 
+test('ish vaqti: har kuni 9:00 – 23:00 (o\'zbekcha va ruscha)', async () => {
+  const uz = (await get('/')).text;
+  for (const m of ['Bugun ochiq · 9:00 – 23:00', '<b>9:00 – 23:00</b>Har kuni', 'Har kuni 9:00 dan 23:00 gacha', 'h <= 22;']) {
+    assert.ok(uz.includes(m), `${m} yo'q`);
+  }
+  const ru = (await get('/ru/')).text;
+  for (const m of ['Сегодня открыто · 9:00 – 23:00', '<b>9:00 – 23:00</b>Ежедневно', 'Ежедневно с 9:00 до 23:00']) {
+    assert.ok(ru.includes(m), `${m} yo'q`);
+  }
+  for (const text of [uz, ru]) assert.ok(!text.includes('22:00'), 'eski ish vaqti (22:00) qolgan');
+});
+
 test('menyu ma\'lumoti (/.netlify/functions/menyu)', async () => {
   const r = await get('/.netlify/functions/menyu');
   assert.equal(r.status, 200);
