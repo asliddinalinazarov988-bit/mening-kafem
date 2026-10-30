@@ -24,7 +24,7 @@ module.exports = {
     'Til': 'Язык',
 
     // --- Hero ---
-    'Bugun ochiq · 9:00 – 23:00': 'Сегодня открыто · 9:00 – 23:00',
+    'Bugun ochiq · 9:00 – 22:00': 'Сегодня открыто · 9:00 – 22:00',
     "Oilaviy ovqatlanish uchun qulay, tinch va hamyonbop — haqiqiy amerikancha ta'm.":
       'Уютно, спокойно и недорого — настоящий американский вкус для всей семьи.',
     'Joy band qiling': 'Забронировать стол',
@@ -111,7 +111,7 @@ module.exports = {
 
     // --- Joy band qilish va aloqa ---
     'Ish vaqti': 'Время работы',
-    'Har kuni 9:00 dan 23:00 gacha': 'Ежедневно с 9:00 до 23:00',
+    'Har kuni 9:00 dan 22:00 gacha': 'Ежедневно с 9:00 до 22:00',
     'Telefon': 'Телефон',
     'Joylar': 'Места',
     '20 ta qulay stol, barchasida rozetka': '20 удобных столов, у каждого — розетка',

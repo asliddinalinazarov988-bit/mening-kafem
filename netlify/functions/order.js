@@ -186,22 +186,12 @@ exports.handler = async (event) => {
       }
       price = row ? row.narx : undefined;
     }
-    // Sayt narx yubormaydi; so'rovga narx qo'shilgan va u menyudagidan farq qilsa — rad etiladi.
-    const sentPrice = it && (it.price !== undefined ? it.price : it.narx);
-    if (
-      !price || !Number.isInteger(qty) || qty < 1 || qty > LIMITS.qty ||
-      (sentPrice !== undefined && Number(sentPrice) !== price)
-    ) {
+    if (!price || !Number.isInteger(qty) || qty < 1 || qty > LIMITS.qty) {
       return fail(400, "Savatda noto'g'ri taom bor");
     }
     total += price * qty;
     taomlar.push({ nom: itemName, soni: qty, narx: price });
     lines.push(`• ${esc(itemName)} — ${qty} × ${som(price)} = ${som(price * qty)}`);
-  }
-
-  const sentTotal = data.total !== undefined ? data.total : data.jami;
-  if (sentTotal !== undefined && Number(sentTotal) !== total) {
-    return fail(400, "Savatda noto'g'ri taom bor");
   }
 
   await saveOrder({
