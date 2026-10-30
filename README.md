@@ -145,12 +145,11 @@ Ularni GitHub'da **Merge pull request** bilan Merj qiling — `main` ga push bo'
 «Hostingga yuklash» oxirida 1,5 daqiqa kutib, `/`, `/ru/`, `/privacy` va menyu ma'lumoti (`/.netlify/functions/menyu`) ochilishi va kutilgan matn borligi tekshiriladi (`scripts/sayt-tekshir.js`):
 
 - o'tsa — Telegram'ga «✅ Sayt yangilandi» + o'zgarish nomi + GitHub havolasi;
-- menyu ma'lumoti hozircha faqat ogohlantirish beradi: u o'tmasa sayt qaytarilmaydi, «✅» xabarida «⚠️» qatori va javobning boshi chiqadi (2026-10-30 dagi joylashda menyu javobi kutilgandek bo'lmagan, sababi aniqlanguncha);
-- `/`, `/ru/` yoki `/privacy` o'tmasa — `main` ga oxirgi o'zgarishni bekor qiluvchi (revert) commit qo'shiladi, eski versiya alohida papkada (`.eski/`) yasalib qayta yuklanadi va yana tekshiriladi: «❌ Yangilanish ishlamadi, eski versiya qaytarildi» + sabab;
+- o'tmasa — `main` ga oxirgi o'zgarishni bekor qiluvchi (revert) commit qo'shiladi, eski versiya alohida papkada (`.eski/`) yasalib qayta yuklanadi va yana tekshiriladi: «❌ Yangilanish ishlamadi, eski versiya qaytarildi» + sabab;
 - qaytarishdan keyin ham ochilmasa — «🆘 Sayt ochilmayapti, darhol tekshiring»;
 - FTP yuklash o'zi xato bersa — «❌ Saytga yuklab bo'lmadi (FTP)».
 
-Muvaffaqiyatsiz yangilanishdan keyin workflow qizil bo'ladi. Revert'dan keyin xatoni tuzatish uchun Claude'ga yangi vazifa bering.
+Muvaffaqiyatsiz yangilanishdan keyin workflow qizil bo'ladi. Hostingdagi fayllarni cPanel orqali qo'lda o'zgartirmang: FTP yuklash faqat git'da o'zgargan fayllarni yuboradi, serverda tahrirlangan fayl ustidan yozilmay qoladi (2026-10-30 da shu sabab `menyu.js` serverda boshqacha bo'lib, menyu tekshiruvi o'tmagan). Revert'dan keyin xatoni tuzatish uchun Claude'ga yangi vazifa bering.
 
 ### «Oxirgi o'zgarishni bekor qil»
 

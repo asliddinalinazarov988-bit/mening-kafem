@@ -141,6 +141,11 @@ test('menyu ma\'lumoti (/.netlify/functions/menyu)', async () => {
   assert.equal(burger.nomi_ru, 'Бургер');
 });
 
+test('sayt menyu javobidagi taomlar va items kalitlarini o\'qiydi', async () => {
+  const text = (await get('/')).text;
+  assert.ok(text.includes('data.taomlar') && text.includes('data.items'));
+});
+
 test('yashirin fayllar berilmaydi', async () => {
   for (const p of ['/server.js', '/package.json', '/CLAUDE.md', '/scripts/ru.js', '/test/yordam/soxta.js', '/netlify/functions/order.js', '/i18n/ru.js', '/.github/workflows/tekshiruv.yml', '/yoq-sahifa']) {
     assert.equal((await get(p)).status, 404, p);

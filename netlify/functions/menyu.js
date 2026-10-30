@@ -1,7 +1,9 @@
 // Sayt menyusini JSON qilib beradi: GET /.netlify/functions/menyu
 //  - faqat hostingda (PGDATABASE bor) ishlaydi, aks holda 404 — sayt index.html dagi menyuni ko'rsatadi;
 //  - 60 soniyalik kesh (serverda va brauzerda);
-//  - ruscha maydonlar (nomi_ru, tavsif_ru, narx_matn_ru) bo'sh bo'lsa null — /ru sahifa o'zbekchasini ko'rsatadi.
+//  - ruscha maydonlar (nomi_ru, tavsif_ru, narx_matn_ru) bo'sh bo'lsa null — /ru sahifa o'zbekchasini ko'rsatadi;
+//  - javob: { ok: true, taomlar: [...] }. Hostingdagi faylni qo'lda o'zgartirmang — FTP yuklash faqat
+//    git'da o'zgargan fayllarni yuboradi, serverda tahrirlangan nusxa ustidan yozilmay qoladi.
 
 const db = require('../lib/db');
 
