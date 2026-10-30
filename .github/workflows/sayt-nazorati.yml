@@ -42,7 +42,7 @@ jobs:
             --json databaseId,conclusion \
             --jq "[.[] | select(.databaseId != $GITHUB_RUN_ID and (.conclusion == \"success\" or .conclusion == \"failure\"))][0].conclusion // \"\"" \
             || echo "")
-          echo "Oldingi holat: ${holat:-noma'lum}"
+          echo "Oldingi holat: ${holat:-topilmadi}"
           echo "holat=$holat" >> "$GITHUB_OUTPUT"
 
       - name: Tekshirish
