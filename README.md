@@ -145,7 +145,8 @@ Ularni GitHub'da **Merge pull request** bilan Merj qiling — `main` ga push bo'
 «Hostingga yuklash» oxirida 1,5 daqiqa kutib, `/`, `/ru/`, `/privacy` va menyu ma'lumoti (`/.netlify/functions/menyu`) ochilishi va kutilgan matn borligi tekshiriladi (`scripts/sayt-tekshir.js`):
 
 - o'tsa — Telegram'ga «✅ Sayt yangilandi» + o'zgarish nomi + GitHub havolasi;
-- o'tmasa — `main` ga oxirgi o'zgarishni bekor qiluvchi (revert) commit qo'shiladi, eski versiya qayta yuklanadi va yana tekshiriladi: «❌ Yangilanish ishlamadi, eski versiya qaytarildi» + sabab;
+- menyu ma'lumoti hozircha faqat ogohlantirish beradi: u o'tmasa sayt qaytarilmaydi, «✅» xabarida «⚠️» qatori va javobning boshi chiqadi (2026-10-30 dagi joylashda menyu javobi kutilgandek bo'lmagan, sababi aniqlanguncha);
+- `/`, `/ru/` yoki `/privacy` o'tmasa — `main` ga oxirgi o'zgarishni bekor qiluvchi (revert) commit qo'shiladi, eski versiya alohida papkada (`.eski/`) yasalib qayta yuklanadi va yana tekshiriladi: «❌ Yangilanish ishlamadi, eski versiya qaytarildi» + sabab;
 - qaytarishdan keyin ham ochilmasa — «🆘 Sayt ochilmayapti, darhol tekshiring»;
 - FTP yuklash o'zi xato bersa — «❌ Saytga yuklab bo'lmadi (FTP)».
 

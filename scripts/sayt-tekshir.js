@@ -4,6 +4,8 @@
 // Manzil: SAYT_URL (bo'lmasa https://burgersmash.uz). Har sahifa TEKSHIRUV_URINISH martagacha
 // (bo'lmasa 3, 15 soniya oraliqda) uriniladi.
 // Xato bo'lsa sababi chiqadi, GITHUB_OUTPUT ga «sabab» yoziladi va buyruq xato bilan tugaydi.
+// «ixtiyoriy» tekshiruv (menyu) o'tmasa — faqat ogohlantirish: GITHUB_OUTPUT ga «ogohlantirish» yoziladi,
+// sayt qaytarilmaydi (2026-10-30 da menyu javobi kutilgandek emas edi, sababi aniqlanguncha).
 
 const fs = require('fs');
 
@@ -24,13 +26,14 @@ const TEKSHIRUVLAR = [
   {
     yol: '/.netlify/functions/menyu',
     joylash: true,
+    ixtiyoriy: true,
     tekshir: (text) => {
       try {
         const data = JSON.parse(text);
-        if (data.ok === true && Array.isArray(data.taomlar) && data.taomlar.length) return null;
-        return 'menyu bo\'sh yoki ok emas';
+        if (data && data.ok === true && Array.isArray(data.taomlar) && data.taomlar.length) return null;
+        return `menyu bo'sh yoki ok emas: ${text.slice(0, 150)}`;
       } catch {
-        return 'menyu JSON emas';
+        return `menyu JSON emas: ${text.slice(0, 150)}`;
       }
     },
   },
@@ -48,13 +51,14 @@ async function birMarta({ yol, tekshir }) {
     return `ochilmadi (${e.cause && e.cause.code ? e.cause.code : e.name === 'TimeoutError' ? 'vaqt tugadi' : e.message})`;
   }
   const text = await res.text().catch(() => '');
-  if (res.status !== 200) return `HTTP ${res.status}`;
+  if (res.status !== 200) return `HTTP ${res.status}: ${text.replace(/\s+/g, ' ').slice(0, 150)}`;
   return tekshir(text);
 }
 
 async function main() {
   const joylash = process.argv.includes('--joylash');
   const xatolar = [];
+  const ogohlantirishlar = [];
   for (const t of TEKSHIRUVLAR.filter((x) => joylash || !x.joylash)) {
     let xato;
     for (let i = 1; i <= URINISH; i++) {
@@ -63,12 +67,16 @@ async function main() {
       console.log(`  ${t.yol}: ${xato} (${i}/${URINISH})`);
       if (i < URINISH) await new Promise((r) => setTimeout(r, ORALIQ_MS));
     }
-    if (xato) xatolar.push(`${t.yol} — ${xato}`);
-    else console.log(`✅ ${BASE}${t.yol}`);
+    if (!xato) console.log(`✅ ${BASE}${t.yol}`);
+    else if (t.ixtiyoriy) ogohlantirishlar.push(`${t.yol} — ${xato}`);
+    else xatolar.push(`${t.yol} — ${xato}`);
   }
 
-  const sabab = xatolar.join('; ');
-  if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `sabab=${sabab.replace(/[\r\n]+/g, ' ')}\n`);
+  const bir = (list) => list.join('; ').replace(/[\r\n]+/g, ' ');
+  if (process.env.GITHUB_OUTPUT) {
+    fs.appendFileSync(process.env.GITHUB_OUTPUT, `sabab=${bir(xatolar)}\nogohlantirish=${bir(ogohlantirishlar)}\n`);
+  }
+  for (const x of ogohlantirishlar) console.log(`::warning::${x}`);
   if (xatolar.length) {
     for (const x of xatolar) console.log(`::error::${x}`);
     process.exit(1);

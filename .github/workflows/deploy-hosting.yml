@@ -74,24 +74,29 @@ jobs:
         env:
           NOMI: ${{ steps.info.outputs.nomi }}
           HAVOLA: ${{ steps.info.outputs.havola }}
+          OGOH: ${{ steps.tekshir.outputs.ogohlantirish && format('⚠️ {0}', steps.tekshir.outputs.ogohlantirish) || '' }}
         run: |
           node scripts/telegram.js "✅ Sayt yangilandi
           $NOMI
+          $OGOH
           $HAVOLA"
 
       # Squash commit'da bitta ota bor; qo'lda qilingan «Merge pull request» da -m 1 kerak.
+      # Eski versiya alohida papkada (.eski/, git worktree) yasaladi — workflow'ning o'z fayllari
+      # (scripts/, .github/actions/) ishchi papkada o'zgarmay qoladi.
       - name: Oxirgi o'zgarishni bekor qilish (revert)
         id: revert
         if: steps.tekshir.outcome == 'failure' && github.ref == 'refs/heads/main'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
-          git checkout -B main origin/main
+          git worktree add -B qaytarish .eski origin/main
+          cd .eski
           ota=$(( $(git rev-list --parents -n 1 "$GITHUB_SHA" | wc -w) - 1 ))
           if [ "$ota" -gt 1 ]; then m="-m 1"; else m=""; fi
           git revert --no-edit $m "$GITHUB_SHA"
-          if git push origin main; then
+          if git push origin HEAD:main; then
             echo "push=ok" >> "$GITHUB_OUTPUT"
           else
             echo "::warning::Revert main'ga yozilmadi — eski versiya baribir yuklanadi"
@@ -102,6 +107,7 @@ jobs:
         if: steps.revert.outcome == 'success'
         uses: ./.github/actions/joylash
         with:
+          dir: ./.eski/
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}

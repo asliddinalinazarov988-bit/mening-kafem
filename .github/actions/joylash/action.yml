@@ -2,6 +2,10 @@ name: Hostingga joylash
 description: Fayllarni FTPS orqali americantermiz-app ga yuklaydi va tmp/restart.txt orqali ilovani qayta ishga tushiradi.
 
 inputs:
+  dir:
+    description: Yuklanadigan papka (oxirida / bilan)
+    required: false
+    default: ./
   server:
     required: true
   username:
@@ -15,9 +19,11 @@ runs:
     # Passenger tmp/restart.txt o'zgarganda ilovani qayta ishga tushiradi.
     - name: tmp/restart.txt yaratish
       shell: bash
+      env:
+        DIR: ${{ inputs.dir }}
       run: |
-        mkdir -p tmp
-        date -u +"%Y-%m-%dT%H:%M:%SZ $(git rev-parse HEAD)" > tmp/restart.txt
+        mkdir -p "${DIR}tmp"
+        date -u +"%Y-%m-%dT%H:%M:%SZ $(git -C "$DIR" rev-parse HEAD)" > "${DIR}tmp/restart.txt"
 
     # server-dir — cPanel hisobining uy papkasiga nisbatan ilova papkasi
     # (FTP_USERNAME sifatida cPanel loginining o'zi ishlatiladi).
@@ -30,7 +36,7 @@ runs:
         port: 21
         protocol: ftps
         security: strict
-        local-dir: ./
+        local-dir: ${{ inputs.dir }}
         server-dir: americantermiz-app/
         exclude: |
           **/.git*
@@ -51,5 +57,5 @@ runs:
         port: 21
         protocol: ftps
         security: strict
-        local-dir: ./tmp/
+        local-dir: ${{ inputs.dir }}tmp/
         server-dir: americantermiz-app/tmp/
