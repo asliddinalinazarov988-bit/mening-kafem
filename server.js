@@ -17,8 +17,8 @@ const FUNCTIONS = new Set(['order', 'telegram', 'telegram-setup', 'kochirish', '
 const MAX_BODY = 1024 * 1024; // 1 MB
 
 // Hech qachon berilmaydigan papka va fayllar.
-const HIDDEN_DIRS = new Set(['netlify', 'supabase', 'node_modules', 'tmp', 'i18n', 'ru']);
-const HIDDEN_FILES = new Set(['server.js', 'package.json', 'package-lock.json', 'netlify.toml']);
+const HIDDEN_DIRS = new Set(['netlify', 'supabase', 'node_modules', 'tmp', 'i18n', 'ru', 'scripts', 'test']);
+const HIDDEN_FILES = new Set(['server.js', 'package.json', 'package-lock.json', 'netlify.toml', 'CLAUDE.md']);
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -177,9 +177,16 @@ function serveStatic(req, res, url) {
     return;
   }
 
+  // Kengaytmasiz manzil (/privacy) bo'lsa, privacy.html beriladi (Netlify'dagidek).
+  const tryHtml = !path.extname(file) && !rel.endsWith('/');
+  sendFile(req, res, file, tryHtml ? file + '.html' : null);
+}
+
+function sendFile(req, res, file, fallback) {
   fs.stat(file, (err, st) => {
     if (err || !st.isFile()) {
-      send(res, 404, 'Not Found');
+      if (fallback) sendFile(req, res, fallback, null);
+      else send(res, 404, 'Not Found');
       return;
     }
     const type = TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream';

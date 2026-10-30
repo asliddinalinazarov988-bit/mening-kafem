@@ -1,57 +1,154 @@
 name: Hostingga yuklash
 
+# main'ga push bo'lganda, «Avtomatik Merj» dan keyin (workflow_dispatch) yoki qo'lda ishga tushadi:
+# yuklaydi → 1,5 daqiqa kutadi → saytni tekshiradi → Telegram'ga natija.
+# Tekshiruv o'tmasa: main'ga revert commit qo'shiladi, eski versiya qayta yuklanadi va yana tekshiriladi.
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      ozgarish:
+        description: "O'zgarish nomi (Telegram xabari uchun, ixtiyoriy)"
+        required: false
+        default: ''
+      havola:
+        description: 'GitHub havolasi (ixtiyoriy)'
+        required: false
+        default: ''
 
 concurrency:
   group: deploy-hosting
   cancel-in-progress: false
 
+permissions:
+  contents: write # muvaffaqiyatsiz yangilanishni revert qilish uchun
+
+env:
+  SAYT_URL: ${{ vars.SAYT_URL || 'https://burgersmash.uz' }}
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+  RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # Passenger tmp/restart.txt o'zgarganda ilovani qayta ishga tushiradi.
-      - name: tmp/restart.txt yaratish
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: O'zgarish nomi va havolasi
+        id: info
+        env:
+          OZGARISH: ${{ inputs.ozgarish }}
+          HAVOLA: ${{ inputs.havola }}
+          COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
         run: |
-          mkdir -p tmp
-          date -u +"%Y-%m-%dT%H:%M:%SZ ${GITHUB_SHA}" > tmp/restart.txt
+          nomi="${OZGARISH:-$(git log -1 --format=%s "$GITHUB_SHA")}"
+          echo "nomi=${nomi//$'\n'/ }" >> "$GITHUB_OUTPUT"
+          echo "havola=${HAVOLA:-$COMMIT_URL}" >> "$GITHUB_OUTPUT"
 
-      # server-dir — cPanel hisobining uy papkasiga nisbatan ilova papkasi
-      # (FTP_USERNAME sifatida cPanel loginining o'zi ishlatiladi).
-      - name: Fayllarni yuklash (FTPS)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Hostingga yuklash
+        uses: ./.github/actions/joylash
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          protocol: ftps
-          security: strict
-          local-dir: ./
-          server-dir: americantermiz-app/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            .htaccess
-            **/.htaccess
-            .well-known/**
-            **/*.log
-            tmp/**
 
-      - name: Ilovani qayta ishga tushirish (tmp/restart.txt)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Ilova qayta ishga tushishini kutish
+        run: sleep 90
+
+      - name: Saytni tekshirish
+        id: tekshir
+        continue-on-error: true
+        run: node scripts/sayt-tekshir.js --joylash
+
+      - name: 'Telegram: sayt yangilandi'
+        if: steps.tekshir.outcome == 'success'
+        env:
+          NOMI: ${{ steps.info.outputs.nomi }}
+          HAVOLA: ${{ steps.info.outputs.havola }}
+        run: |
+          node scripts/telegram.js "✅ Sayt yangilandi
+          $NOMI
+          $HAVOLA"
+
+      # Squash commit'da bitta ota bor; qo'lda qilingan «Merge pull request» da -m 1 kerak.
+      - name: Oxirgi o'zgarishni bekor qilish (revert)
+        id: revert
+        if: steps.tekshir.outcome == 'failure' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main origin/main
+          ota=$(( $(git rev-list --parents -n 1 "$GITHUB_SHA" | wc -w) - 1 ))
+          if [ "$ota" -gt 1 ]; then m="-m 1"; else m=""; fi
+          git revert --no-edit $m "$GITHUB_SHA"
+          if git push origin main; then
+            echo "push=ok" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Revert main'ga yozilmadi — eski versiya baribir yuklanadi"
+            echo "push=xato" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Eski versiyani qayta yuklash
+        if: steps.revert.outcome == 'success'
+        uses: ./.github/actions/joylash
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          protocol: ftps
-          security: strict
-          local-dir: ./tmp/
-          server-dir: americantermiz-app/tmp/
+
+      - name: Kutish (eski versiya)
+        if: steps.revert.outcome == 'success'
+        run: sleep 90
+
+      - name: Saytni qayta tekshirish
+        id: tekshir2
+        if: steps.revert.outcome == 'success'
+        continue-on-error: true
+        run: node scripts/sayt-tekshir.js --joylash
+
+      - name: 'Telegram: eski versiya qaytarildi'
+        if: steps.tekshir2.outcome == 'success'
+        env:
+          NOMI: ${{ steps.info.outputs.nomi }}
+          SABAB: ${{ steps.tekshir.outputs.sabab }}
+          ESLATMA: ${{ steps.revert.outputs.push == 'xato' && '⚠️ Revert main''ga yozilmadi — keyingi yuklashdan oldin tekshiring' || '' }}
+        run: |
+          node scripts/telegram.js "❌ Yangilanish ishlamadi, eski versiya qaytarildi
+          $NOMI
+          Sabab: $SABAB
+          $ESLATMA
+          $RUN_URL"
+
+      - name: 'Telegram: sayt ochilmayapti'
+        if: always() && steps.tekshir.outcome == 'failure' && steps.tekshir2.outcome != 'success'
+        env:
+          SABAB: ${{ steps.tekshir2.outputs.sabab || steps.tekshir.outputs.sabab }}
+        run: |
+          node scripts/telegram.js "🆘 Sayt ochilmayapti, darhol tekshiring
+          Sabab: $SABAB
+          $RUN_URL"
+
+      - name: 'Telegram: yuklab bo''lmadi'
+        if: failure() && steps.tekshir.outcome == 'skipped'
+        env:
+          NOMI: ${{ steps.info.outputs.nomi }}
+        run: |
+          node scripts/telegram.js "❌ Saytga yuklab bo'lmadi (FTP)
+          $NOMI
+          $RUN_URL"
+
+      - name: Natija
+        if: always() && steps.tekshir.outcome == 'failure'
+        run: |
+          echo "::error::Yangilanishdan keyin sayt tekshiruvdan o'tmadi"
+          exit 1
