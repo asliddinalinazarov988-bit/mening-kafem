@@ -946,7 +946,9 @@
   fetch('/.netlify/functions/menyu')
     .then(function(res){ return res.ok ? res.json() : null; })
     .then(function(data){
-      var list = data && data.ok && Array.isArray(data.taomlar) ? data.taomlar.filter(function(t){
+      // «items» — hostingdagi eski menyu.js javobi uchun.
+      var arr = data && data.ok ? (Array.isArray(data.taomlar) ? data.taomlar : data.items) : null;
+      var list = Array.isArray(arr) ? arr.filter(function(t){
         return t && typeof t.nomi === 'string' && Number.isInteger(t.narx) &&
           optStr(t.nomi_ru) && optStr(t.tavsif_ru) && optStr(t.narx_matn_ru);
       }) : [];

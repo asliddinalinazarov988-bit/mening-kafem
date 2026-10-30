@@ -4,8 +4,8 @@
 // Manzil: SAYT_URL (bo'lmasa https://burgersmash.uz). Har sahifa TEKSHIRUV_URINISH martagacha
 // (bo'lmasa 3, 15 soniya oraliqda) uriniladi.
 // Xato bo'lsa sababi chiqadi, GITHUB_OUTPUT ga «sabab» yoziladi va buyruq xato bilan tugaydi.
-// «ixtiyoriy» tekshiruv (menyu) o'tmasa — faqat ogohlantirish: GITHUB_OUTPUT ga «ogohlantirish» yoziladi,
-// sayt qaytarilmaydi (2026-10-30 da menyu javobi kutilgandek emas edi, sababi aniqlanguncha).
+// «ixtiyoriy: true» belgilangan tekshiruv o'tmasa — faqat ogohlantirish (GITHUB_OUTPUT ga «ogohlantirish»),
+// sayt qaytarilmaydi. Hozir bunday tekshiruv yo'q.
 
 const fs = require('fs');
 
@@ -26,11 +26,12 @@ const TEKSHIRUVLAR = [
   {
     yol: '/.netlify/functions/menyu',
     joylash: true,
-    ixtiyoriy: true,
     tekshir: (text) => {
       try {
         const data = JSON.parse(text);
-        if (data && data.ok === true && Array.isArray(data.taomlar) && data.taomlar.length) return null;
+        // «items» — hostingdagi eski menyu.js javobi (sahifa ikkalasini ham o'qiydi).
+        const taomlar = data && data.ok === true ? data.taomlar || data.items : null;
+        if (Array.isArray(taomlar) && taomlar.length) return null;
         return `menyu bo'sh yoki ok emas: ${text.slice(0, 150)}`;
       } catch {
         return `menyu JSON emas: ${text.slice(0, 150)}`;
